@@ -10,6 +10,15 @@ const $ = (s, el = document) => el.querySelector(s);
 const $$ = (s, el = document) => [...el.querySelectorAll(s)];
 const esc = (s) => String(s == null ? '' : s).replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
 const initials = (n) => (n || '?').trim().slice(0, 1).toUpperCase();
+function hueOf(n) {
+  let h = 0;
+  for (const c of String(n || '?')) h = (h * 31 + c.charCodeAt(0)) % 360;
+  return h;
+}
+function avatarStyle(n) {
+  const h = hueOf(n);
+  return `style="background:linear-gradient(140deg,hsl(${h} 85% 64%),hsl(${(h + 55) % 360} 78% 46%))"`;
+}
 const EMOJIS = ['😂', '😍', '🔥', '😮', '👏', '💀'];
 
 const S = {
@@ -95,6 +104,7 @@ async function enterApp() {
   showScreen('screen-app');
   S.sharedMode = false;
   $('#classChip').innerHTML = `# ${esc(S.klass.code)}`;
+  updateTopAvatar();
   await refresh(true);
   const qv = new URLSearchParams(location.search).get('view');
   setView(['feed', 'memories', 'profile'].includes(qv) ? qv : 'feed');
@@ -104,6 +114,13 @@ async function enterApp() {
 async function logout() {
   localStorage.removeItem('berail.token');
   location.reload();
+}
+
+function updateTopAvatar() {
+  const el = $('#topAvatar');
+  if (!el || !S.user) return;
+  el.textContent = initials(S.user.name);
+  el.setAttribute('style', `background:linear-gradient(140deg,hsl(${hueOf(S.user.name)} 85% 64%),hsl(${(hueOf(S.user.name) + 55) % 360} 78% 46%))`);
 }
 
 /* ---------- données ---------- */
@@ -168,7 +185,7 @@ function postCard(p) {
 
   return `<article class="post ${p.mine ? 'mine' : ''}" data-post="${p.id}">
     <header class="post-head">
-      <div class="avatar">${initials(p.userName)}</div>
+      <div class="avatar" ${avatarStyle(p.userName)}>${initials(p.userName)}</div>
       <div class="post-who">
         <b>${esc(p.userName)}${p.mine ? ' <span style="color:#8a8a8a;font-weight:600">· toi</span>' : ''}</b>
         <span>${ago(p.createdAt)}${p.late ? '<span class="badge-late">⚠️ En retard</span>' : ''}</span>
@@ -194,7 +211,17 @@ function postCard(p) {
 function renderFeed() {
   const el = $('#view-feed');
   if (!S.posts.length) {
-    el.innerHTML = `<div class="empty"><b>Aucun BeRail pour l'instant.</b><br>Appuie sur le gros bouton pour lancer le premier.<br><br><span style="color:#777">Code de la classe : <b style="color:#ffd400">${esc(S.klass.code)}</b></span><br><span style="color:#666;font-size:12px">Le fil repart à zéro chaque jour.</span></div>`;
+    el.innerHTML = `
+      <div class="view-head"><h2>Fil de la classe</h2><p>La classe #${esc(S.klass.code)} est prête</p></div>
+      <div class="empty">
+        <div style="font-size:40px;line-height:1;margin-bottom:12px">⚡</div>
+        <b>Aucun BeRail pour l'instant.</b><br>
+        Lance le premier : photo arrière, photo avant, et c'est parti.<br><br>
+        <span style="color:rgba(255,255,255,.45);font-size:12px">Le fil repart à zéro chaque jour.</span>
+        <button class="btn btn-primary" style="display:block;margin:18px auto 0;width:100%;max-width:280px" id="emptyTake">Prendre le premier</button>
+      </div>`;
+    const b = $('#emptyTake');
+    if (b) b.onclick = openCapture;
     return;
   }
   const others = S.posts.filter((p) => !p.mine);
@@ -361,7 +388,7 @@ function renderProfile() {
   $('#view-profile').innerHTML = `
     <div class="view-head"><h2>Profil</h2><p>Ton identité dans cette classe</p></div>
     <div class="profile-card">
-      <div class="avatar">${initials(S.user.name)}</div>
+      <div class="avatar" ${avatarStyle(S.user.name)}>${initials(S.user.name)}</div>
       <div><h2>${esc(S.user.name)}</h2><p>Classe # ${esc(S.klass.code)}${isOwner ? ' · organisateur' : ''}</p></div>
     </div>
     <div class="stat-row">
@@ -676,6 +703,7 @@ $('#shareTab').addEventListener('click', () => {
   if (mine) shareModal(mine);
   else classModal();
 });
+$('#topAvatar').addEventListener('click', () => setView('profile'));
 window.addEventListener('resize', () => { clearTimeout(window._rz); window._rz = setTimeout(renderBanner, 100); });
 setInterval(() => { if (S.moment && !S.myPostId) renderBanner(); }, 1000);
 
