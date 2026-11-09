@@ -32,6 +32,60 @@ function save() {
   }, 120);
 }
 
+/* ---------- nettoyage quotidien ----------
+   Les photos du jour sont effacées chaque soir : la place est rendue et le fil
+   repart de zéro le lendemain. Réglable par TZ_NAME / PURGE_HOUR. */
+const TZ_NAME = process.env.TZ_NAME || 'Europe/Paris';
+const PURGE_HOUR = Number(process.env.PURGE_HOUR ?? 23);
+const dayFmt = new Intl.DateTimeFormat('en-CA', { timeZone: TZ_NAME, year: 'numeric', month: '2-digit', day: '2-digit' });
+const hourFmt = new Intl.DateTimeFormat('en-GB', { timeZone: TZ_NAME, hour: '2-digit', hour12: false });
+
+function dayKey(d = new Date()) {
+  const parts = dayFmt.formatToParts(d);
+  const g = (t) => parts.find((x) => x.type === t).value;
+  return `${g('year')}-${g('month')}-${g('day')}`;
+}
+function hourNow(d = new Date()) { return Number(hourFmt.format(d)); }
+
+function deleteMedia(photo) {
+  if (!photo) return;
+  fs.unlink(path.join(MEDIA, path.basename(photo)), () => {});
+}
+
+/* Supprime les fichiers qui ne sont plus référencés par aucun post */
+function pruneMedia() {
+  const used = new Set(db.posts.map((p) => path.basename(p.photo || '')));
+  fs.readdir(MEDIA, (err, files) => {
+    if (err) return;
+    for (const f of files) {
+      if (!used.has(f)) fs.unlink(path.join(MEDIA, f), () => {});
+    }
+  });
+}
+
+function cleanup(force = false) {
+  const today = dayKey();
+  const crossed = !force && hourNow() >= PURGE_HOUR && db.lastPurgeDay !== today;
+  const before = db.posts.length;
+
+  db.posts = db.posts.filter((p) => {
+    const stale = dayKey(new Date(p.createdAt)) !== today;
+    if (crossed || stale) { deleteMedia(p.photo); return false; }
+    return true;
+  });
+
+  let moments = 0;
+  for (const k of Object.values(db.classes)) {
+    if (k.moment && (crossed || dayKey(new Date(k.moment.at)) !== today)) { k.moment = null; moments++; }
+  }
+  if (crossed) db.lastPurgeDay = today;
+
+  const removed = before - db.posts.length;
+  if (removed || moments || crossed) save();
+  if (removed || crossed) pruneMedia();
+  return { removed, moments, crossed, purgeHour: PURGE_HOUR };
+}
+
 /* ---------- utils ---------- */
 function uid(n = 8) { return crypto.randomBytes(n).toString('hex'); }
 function shortCode(n = 3) { return crypto.randomBytes(n).toString('hex').toUpperCase(); }
@@ -114,6 +168,7 @@ function postView(p, viewer) {
 async function api(req, res, url) {
   const route = url.pathname;
   const q = url.searchParams;
+  cleanup();
 
   if (req.method === 'POST' && route === '/api/join') {
     const body = await readBody(req);
@@ -168,6 +223,7 @@ async function api(req, res, url) {
       klass: { code: k.code, owner: k.owner, moment: k.moment, ownerName: (db.users[Object.keys(db.users).find(t => db.users[t].id === k.owner)] || {}).name || null },
       posts: mine ? [mine, ...others] : others,
       myPostId: mine ? mine.id : null,
+      purgeHour: PURGE_HOUR,
       serverTime: Date.now()
     });
   }
@@ -181,6 +237,16 @@ async function api(req, res, url) {
     k.moment = { at: Date.now(), by: u.name };
     save();
     return send(res, 200, { moment: k.moment });
+  }
+
+  if (req.method === 'POST' && route === '/api/purge') {
+    const body = await readBody(req);
+    const u = userFromToken(body.token);
+    if (!u) return send(res, 401, { error: 'unauthorized' });
+    const k = db.classes[u.classCode];
+    if (k.owner !== u.id) return send(res, 403, { error: 'owner_only' });
+    const r = cleanup(true);
+    return send(res, 200, { removed: r.removed, purgeHour: PURGE_HOUR });
   }
 
   if (req.method === 'POST' && route === '/api/post') {
@@ -308,6 +374,10 @@ const HTTPS_PORT = Number(process.env.HTTPS_PORT || 3443);
 const os = require('os');
 const LAN = Object.values(os.networkInterfaces()).flat()
   .filter((i) => i && i.family === 'IPv4' && !i.internal).map((i) => i.address);
+
+cleanup();
+pruneMedia();
+setInterval(() => cleanup(), 60 * 1000);
 
 http.createServer(handler).listen(HTTP_PORT, '0.0.0.0', () => {
   console.log(`HTTP  http://localhost:${HTTP_PORT}`);

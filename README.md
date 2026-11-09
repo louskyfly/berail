@@ -5,6 +5,7 @@ un fil privé, et **chaque BeRail se partage avec un code à 6 caractères**.
 
 Conçu pour les iPads en classe : pas de compte, pas d'e-mail, pas d'installation.
 Les élèves entrent un prénom et le code de la classe, et c'est parti.
+**Les photos sont effacées chaque soir** : le fil repart de zéro le lendemain, rien ne s'accumule.
 
 ![Fil de la classe](docs/screens/fil.png)
 
@@ -61,20 +62,44 @@ openssl req -x509 -newkey rsa:2048 -nodes \
 
 **Classe de démo** : code `DEMO` (3 BeRail d'exemple). `npm run seed` pour la régénérer.
 
-## Déployer
+## Nettoyage automatique des photos
 
-GitHub héberge le code, pas un serveur Node : l'app a besoin d'un hôte qui exécute `node server.js`
-(les iPads doivent pouvoir joindre la même adresse).
+C'est le serveur qui garde les photos. Pour ne pas remplir le disque (surtout sur Render),
+tout est effacé **chaque soir** :
 
-[![Deploy to Render](https://render.com/images/deploy-to-render-button.svg)](https://render.com/deploy?repo=https://github.com/louskyfly/berail)
+- à l'heure configurée (`PURGE_HOUR`, 23 h par défaut, fuseau `TZ_NAME` = Europe/Paris),
+  tous les posts du jour sont supprimés **avec leurs fichiers image** ;
+- le moment en cours de chaque classe est remis à zéro ;
+- au passage minuit, tout post de la veille est également supprimé.
 
-Le fichier `render.yaml` est prêt. Deux points à savoir :
+Le compte des élèves et les codes de classe restent en place : seul le contenu du jour part.
+L'organisateur peut aussi vider à la main : **Profil → Vider les photos maintenant**
+(`POST /api/purge`).
 
-- **HTTPS** : Render (comme Railway, Fly.io, un reverse proxy…) fournit un certificat valide,
-  donc la caméra fonctionne sans bricolage. Le serveur ne démarre HTTPS que si `certs/` existe.
-- **Stockage** : `data/` est sur le disque de la machine. Sur un plan gratuit, un redéploiement
-  efface les posts. Branche un disque persistant (`DATA_DIR=/var/data`) ou remplace le stockage
-  fichier par une base pour un usage durable.
+| Variable | Défaut | Rôle |
+|---|---|---|
+| `PURGE_HOUR` | `23` | Heure du nettoyage (0–23), dans le fuseau ci-dessous |
+| `TZ_NAME` | `Europe/Paris` | Fuseau utilisé pour « la fin de la journée » |
+| `DATA_DIR` | `./data` | Dossier des photos + `db.json` (à monter sur un disque persistant) |
+
+## Déployer sur Render
+
+Le dépôt est prêt pour un **Blueprint** ([`render.yaml`](render.yaml)) :
+service Node, disque de 1 Go monté sur `/var/data`, fuseau Paris, purge à 23 h.
+
+1. [render.com](https://render.com) → **New → Blueprint** → connecte ton compte GitHub.
+2. Choisis le dépôt `berail`, valide le blueprint, déploie.
+3. Render fournit une URL `https://berail-xxxx.onrender.com` en HTTPS valide :
+   **la caméra fonctionne directement**, pas d'avertissement de certificat.
+
+Deux points à connaître :
+
+- Le **disque persistant** (1 Go) demande le plan *Starter* (~7 $/mois). Sur le plan gratuit,
+  le disque est éphémère : les photos disparaissent à chaque redéploiement ou mise en veille.
+  Pour rester gratuit, retire le bloc `disk`, laisse `DATA_DIR` par défaut, et accepte que
+  les photos ne survivent pas à un redémarrage.
+- Le nettoyage du soir tourne **dans le serveur** : pas de cron à configurer.
+  Sur Render, `TZ_NAME=Europe/Paris` est déjà réglé dans `render.yaml`.
 
 ## API
 
@@ -88,17 +113,19 @@ Le fichier `render.yaml` est prêt. Deux points à savoir :
 | `POST` | `/api/post` | Publier un BeRail (photo composite data-URL) |
 | `POST` | `/api/react` | Réagir (bascule un emoji) |
 | `POST` | `/api/comment` | Commenter |
-| `GET` | `/api/p/:code` | Un BeRail par son code, **sans compte** |
+| `GET` | `/api/p/∶code` | Un BeRail par son code, **sans compte** |
+| `POST` | `/api/purge` | Supprimer les photos du jour (organisateur) |
 
 ## Structure
 
 ```
-server.js            HTTP + HTTPS, API JSON, stockage fichier
+server.js            HTTP + HTTPS, API JSON, nettoyage quotidien, stockage fichier
 public/index.html    interface
 public/app.js        logique client (vanilla)
 public/styles.css    thème sombre façon BeReal
 seed.js              données de démo (classe DEMO)
 gen-icons.js         icônes PWA
+render.yaml          blueprint Render (disque, fuseau, purge)
 data/db.json         comptes, classes, posts (non commité)
 data/media/          photos (non commité)
 certs/               certificat auto-signé (non commité)
@@ -107,9 +134,9 @@ certs/               certificat auto-signé (non commité)
 ## Limites de la V1
 
 - Les **notifications** ne sont pas de vraies push : l'app ouverte vérifie toutes les 15 s.
-- Pas encore de **suppression ni de modération**, ni de verrou « un seul post par moment ».
-- Les photos sont stockées en clair sur le disque du serveur : c'est un outil de classe, pas un
-  service public. Un code de classe = accès au fil.
+- Pas encore de **suppression individuelle** ni de verrou « un seul post par moment ».
+- Les photos sont stockées en clair sur le disque du serveur, et supprimées chaque soir.
+  Un code de classe = accès au fil.
 - `?as=Prénom&code=CODE` permet de pré-remplir la connexion (pratique pour une démo/kiosque).
 
 ## Licence

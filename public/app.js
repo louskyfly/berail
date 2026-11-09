@@ -21,6 +21,7 @@ const S = {
   moment: null,
   view: 'feed',
   lastPostCount: 0,
+  purgeHour: 23,
   sharedMode: false
 };
 
@@ -113,6 +114,7 @@ async function refresh(rerender = false) {
   S.klass = r.klass || S.klass;
   S.moment = r.klass ? r.klass.moment : null;
   S.lastPostCount = S.posts.length;
+  S.purgeHour = r.purgeHour != null ? r.purgeHour : S.purgeHour;
   if (rerender) { renderFeed(); }
   renderBanner();
 }
@@ -192,7 +194,7 @@ function postCard(p) {
 function renderFeed() {
   const el = $('#view-feed');
   if (!S.posts.length) {
-    el.innerHTML = `<div class="empty"><b>Aucun BeRail pour l'instant.</b><br>Appuie sur le gros bouton pour lancer le premier.<br><br><span style="color:#777">Code de la classe : <b style="color:#ffd400">${esc(S.klass.code)}</b></span></div>`;
+    el.innerHTML = `<div class="empty"><b>Aucun BeRail pour l'instant.</b><br>Appuie sur le gros bouton pour lancer le premier.<br><br><span style="color:#777">Code de la classe : <b style="color:#ffd400">${esc(S.klass.code)}</b></span><br><span style="color:#666;font-size:12px">Le fil repart à zéro chaque jour.</span></div>`;
     return;
   }
   const others = S.posts.filter((p) => !p.mine);
@@ -379,6 +381,11 @@ function renderProfile() {
       <button class="btn btn-primary" style="width:100%" id="pMoment">${S.moment ? 'Relancer le moment' : '⚡ Lancer le moment'}</button>
     </div>` : ''}
     <div class="panel">
+      <h3>Espace & nettoyage</h3>
+      <p>Les photos sont effacées automatiquement chaque soir à ${S.purgeHour}h pour libérer la place. Le fil repart à zéro chaque jour, rien ne s'accumule.</p>
+      ${isOwner ? '<button class="btn btn-ghost" style="width:100%;color:#ff8a80;border-color:#3d1414" id="pPurge">Vider les photos maintenant</button>' : ''}
+    </div>
+    <div class="panel">
       <h3>Mon compte</h3>
       <p>Chaque BeRail publié possède son propre code à 6 caractères. Tu peux changer de compte sans perdre tes publications.</p>
       <button class="btn btn-ghost" style="width:100%" id="pLogout">Changer de compte</button>
@@ -395,7 +402,36 @@ function renderProfile() {
       } catch (_) { toast('Impossible de lancer le moment'); }
     };
   }
+  if (isOwner) $('#pPurge').onclick = purgeModal;
   $('#pLogout').onclick = logout;
+}
+
+function purgeModal() {
+  openModal(`<div class="sheet">
+    <h3>Vider les photos ?</h3>
+    <p>Tous les BeRail et toutes les photos du jour seront supprimés tout de suite. Les comptes et la classe restent en place.</p>
+    <div class="row" style="flex-direction:column">
+      <button class="btn btn-primary" id="purgeYes">Oui, tout supprimer</button>
+      <button class="btn btn-ghost" data-close>Annuler</button>
+    </div>
+  </div>`);
+  $('#purgeYes').onclick = async () => {
+    const btn = $('#purgeYes');
+    btn.disabled = true; btn.textContent = 'Suppression…';
+    try {
+      const r = await API('/api/purge', {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ token: S.token })
+      });
+      closeModal();
+      await refresh(true);
+      setView('profile');
+      toast(r.removed ? `${r.removed} photo${r.removed > 1 ? 's' : ''} supprimée${r.removed > 1 ? 's' : ''}` : 'Rien à supprimer');
+    } catch (_) {
+      btn.disabled = false; btn.textContent = 'Oui, tout supprimer';
+      toast('Suppression impossible');
+    }
+  };
 }
 
 /* ---------- capture ---------- */
