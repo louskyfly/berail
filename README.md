@@ -3,7 +3,8 @@
 **Le BeReal de ta classe.** Un moment lancé par le prof, deux photos (arrière + avant),
 un fil privé, et **chaque BeRail se partage avec un code à 6 caractères**.
 
-Conçu pour les iPads en classe : pas de compte, pas d'e-mail, pas d'installation.
+Conçu pour les iPads en classe : interface **Liquid Glass** (verre dépoli, dégradés animés),
+pas de compte, pas d'e-mail, pas d'installation.
 Les élèves entrent un prénom et le code de la classe, et c'est parti.
 **Les photos sont effacées chaque soir** : le fil repart de zéro le lendemain, rien ne s'accumule.
 
@@ -60,7 +61,8 @@ openssl req -x509 -newkey rsa:2048 -nodes \
 - Publier dans les **2 minutes** après le moment = à l'heure, ensuite le post porte **⚠️ En retard**.
 - Réactions emoji, commentaires, mémoires, fil de la classe.
 
-**Classe de démo** : code `DEMO` (3 BeRail d'exemple). `npm run seed` pour la régénérer.
+**Classe 209** : elle est déjà créée. Le premier qui entre devient organisateur (le prof, de préférence).
+`npm run seed` crée une classe de test avec 3 posts.
 
 ## Nettoyage automatique des photos
 
@@ -123,7 +125,7 @@ server.js            HTTP + HTTPS, API JSON, nettoyage quotidien, stockage fichi
 public/index.html    interface
 public/app.js        logique client (vanilla)
 public/styles.css    thème sombre façon BeReal
-seed.js              données de démo (classe DEMO)
+seed.js              classe de test avec 3 posts
 gen-icons.js         icônes PWA
 render.yaml          blueprint Render (disque, fuseau, purge)
 data/db.json         comptes, classes, posts (non commité)
