@@ -1,0 +1,13 @@
+# Dépendances
+node_modules/
+
+# Données locales (photos, comptes, posts)
+data/
+
+# Certificat auto-signé (contient une clé privée)
+certs/
+
+# Logs et divers
+*.log
+.DS_Store
+Thumbs.db

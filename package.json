@@ -1,0 +1,19 @@
+{
+  "name": "berail",
+  "version": "1.0.0",
+  "private": true,
+  "description": "BeRail — un BeReal de classe, partageable par code.",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/louskyfly/berail.git"
+  },
+  "engines": {
+    "node": ">=18"
+  },
+  "scripts": {
+    "start": "node server.js",
+    "seed": "node seed.js",
+    "icons": "node gen-icons.js"
+  }
+}

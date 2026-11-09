@@ -1,0 +1,130 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, maximum-scale=1, user-scalable=no">
+<meta name="theme-color" content="#000000">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="BeRail">
+<title>BeRail</title>
+<link rel="manifest" href="/manifest.webmanifest">
+<link rel="apple-touch-icon" href="/icon-180.png">
+<link rel="icon" href="/icon-180.png">
+<link rel="stylesheet" href="/styles.css">
+</head>
+<body>
+<div id="app">
+
+  <!-- ───── Connexion ───── -->
+  <section id="screen-auth" class="screen">
+    <div class="auth-wrap">
+      <div class="brand">
+        <span class="brand-dot"></span>BeRail
+      </div>
+      <p class="auth-tag">Le BeReal de ta classe.<br>Un moment. Deux photos. Un code.</p>
+      <form id="joinForm" class="auth-form" autocomplete="off">
+        <label class="field">
+          <span>Ton prénom</span>
+          <input id="inName" maxlength="24" placeholder="Ex. Léa" autocomplete="off" required>
+        </label>
+        <label class="field">
+          <span>Code de la classe</span>
+          <input id="inCode" maxlength="12" placeholder="Ex. 4B-2026" autocapitalize="characters" autocomplete="off" required>
+        </label>
+        <p id="authError" class="error hidden"></p>
+        <button type="submit" class="btn btn-primary" id="joinBtn">Entrer</button>
+        <button type="button" class="btn btn-ghost hidden" id="createBtn">Créer la classe</button>
+      </form>
+      <p class="auth-foot">Pas de compte, pas d'e-mail. Juste un code donné par le prof.</p>
+    </div>
+  </section>
+
+  <!-- ───── App ───── -->
+  <section id="screen-app" class="screen hidden">
+    <header class="topbar">
+      <div class="topbar-left">
+        <span class="logo-sm">BeRail</span>
+        <button class="chip" id="classChip" title="Partager le code de la classe"></button>
+      </div>
+      <div class="topbar-right">
+        <span class="live-dot" id="liveDot" title="Connecté"></span>
+      </div>
+    </header>
+
+    <div id="momentBanner" class="moment hidden"></div>
+
+    <main id="views">
+      <div id="view-feed" class="view"></div>
+      <div id="view-memories" class="view hidden"></div>
+      <div id="view-profile" class="view hidden"></div>
+    </main>
+
+    <nav class="tabbar">
+      <button class="tab" data-view="feed" aria-pressed="true">
+        <svg viewBox="0 0 24 24"><path d="M4 5h16v4H4zM4 11h16v8H4z"/></svg><span>Fil</span>
+      </button>
+      <button class="tab" data-view="memories">
+        <svg viewBox="0 0 24 24"><path d="M4 4h7v7H4zM13 4h7v7h-7zM4 13h7v7H4zM13 13h7v7h-7z"/></svg><span>Mémoires</span>
+      </button>
+      <button class="shutter-tab" id="openCapture" aria-label="Prendre un BeRail">
+        <span class="shutter-ring"><span class="shutter-core"></span></span>
+      </button>
+      <button class="tab" data-view="profile">
+        <svg viewBox="0 0 24 24"><path d="M12 12a4 4 0 1 0 0-8 4 4 0 0 0 0 8zm0 2c-4 0-7 2-7 4v2h14v-2c0-2-3-4-7-4z"/></svg><span>Profil</span>
+      </button>
+      <button class="tab" id="shareTab">
+        <svg viewBox="0 0 24 24"><path d="M14 3l7 7-7 7v-4.5C9 12.5 6 14 4 18c0-6 3-9 10-10V3z"/></svg><span>Partager</span>
+      </button>
+    </nav>
+  </section>
+
+  <!-- ───── Capture ───── -->
+  <section id="screen-capture" class="screen capture hidden">
+    <video id="cam" playsinline muted autoplay></video>
+    <div class="cam-shade"></div>
+
+    <div class="capture-top">
+      <button class="icon-btn" id="closeCapture">✕</button>
+      <span class="capture-step" id="stepLabel">Caméra arrière</span>
+      <button class="icon-btn" id="flipCam" title="Changer de caméra">⇄</button>
+    </div>
+
+    <div class="cam-error hidden" id="camError">
+      <p id="camErrorText">Caméra indisponible.</p>
+      <label class="btn btn-primary file-btn">Photo arrière<input type="file" accept="image/*" capture="environment" id="fileBack"></label>
+      <label class="btn btn-primary file-btn">Photo avant<input type="file" accept="image/*" capture="user" id="fileFront"></label>
+      <button class="btn btn-ghost" id="closeCapture2">Annuler</button>
+    </div>
+
+    <div class="capture-bottom">
+      <p class="capture-hint" id="captureHint">Photo arrière</p>
+      <button class="shutter" id="shutter" aria-label="Prendre la photo"></button>
+      <p class="capture-sub" id="captureSub">1 / 2</p>
+    </div>
+
+    <div class="review hidden" id="review">
+      <div class="review-head">
+        <button class="icon-btn" id="retake">↺</button>
+        <span>Ton BeRail</span>
+        <span class="review-late hidden" id="reviewLate">⚠️ En retard</span>
+      </div>
+      <img id="reviewImg" alt="Aperçu">
+      <div class="review-foot">
+        <input id="captionInput" maxlength="140" placeholder="Ajoute une légende…" autocomplete="off">
+        <button class="btn btn-primary" id="publishBtn">Publier</button>
+        <p class="review-note">Visible par ta classe uniquement.</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- ───── Post partagé (code) ───── -->
+  <section id="screen-shared" class="screen hidden"></section>
+
+  <!-- ───── Modale ───── -->
+  <div id="modal" class="modal hidden"></div>
+  <div id="toast" class="toast"></div>
+</div>
+<script src="/app.js"></script>
+</body>
+</html>
