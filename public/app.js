@@ -16,6 +16,8 @@ function avatarStyle(n) {
   const h = hueOf(n);
   return `style="background:linear-gradient(140deg,hsl(${h} 85% 64%),hsl(${(h + 55) % 360} 78% 46%))"`;
 }
+const PUSH_URL = 'https://berail-push.onrender.com';
+const VAPID_PUBLIC = 'BFm4BdMyqnUxIXmhirnYUdmkM_9uIHPqxF6-ZQHKvqsw0GyH5H62ZVs0nPIE8HjwluPzuINItmN2GowGsMx_-BE';
 const BLANK = 'data:image/gif;base64,R0lGODlhAQABAAAAACH5BAEKAAEALAAAAAABAAEAAAICTAEAOw==';
 const ICON = {
   dl: '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3v11m0 0l-4.5-4.5M12 14l4.5-4.5M5 17v2a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2v-2" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg>',
@@ -491,9 +493,10 @@ function renderProfile() {
     </div>
     ${isOwner ? `<div class="panel">
       <h3>Moment du jour</h3>
-      <p>Tu es l'organisateur : lance le BeReal quand tu veux. Tout le monde voit la notification dans les 15 secondes.</p>
+      <p>Tu es l'organisateur : lance le BeRail quand tu veux. Toute la classe reçoit une notification.</p>
       <button class="btn btn-primary" style="width:100%" id="pMoment">${S.moment ? 'Relancer le moment' : '⚡ Lancer le moment'}</button>
     </div>` : ''}
+    <div class="panel" id="notifPanel"></div>
     <div class="panel">
       <h3>Espace & nettoyage</h3>
       <p>Chaque BeRail reste ${S.retentionDays} jours, puis il est effacé automatiquement pour libérer la place. Télécharge ceux que tu veux garder.</p>
@@ -511,13 +514,76 @@ function renderProfile() {
     $('#pMoment').onclick = async () => {
       try {
         await API('/api/moment', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ token: S.token }) });
+        pushServer('/moment', { token: S.token });
         await refresh(true);
         toast('⚡ Moment lancé');
       } catch (_) { toast('Impossible de lancer le moment'); }
     };
   }
   if (isOwner) $('#pPurge').onclick = purgeModal;
+  renderNotifPanel();
   $('#pLogout').onclick = logout;
+}
+
+/* ---------- notifications ---------- */
+const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
+const isStandalone = () => window.matchMedia('(display-mode: standalone)').matches || navigator.standalone === true;
+let swReg = null;
+if ('serviceWorker' in navigator) navigator.serviceWorker.register('/sw.js').then((r) => { swReg = r; }).catch(() => {});
+
+async function notifState() {
+  if (!('serviceWorker' in navigator) || !('PushManager' in window) || !('Notification' in window)) {
+    return isIOS && !isStandalone() ? 'install' : 'unsupported';
+  }
+  if (Notification.permission === 'denied') return 'denied';
+  const reg = swReg || await navigator.serviceWorker.ready;
+  const sub = await reg.pushManager.getSubscription();
+  return sub ? 'on' : 'off';
+}
+function b64ToU8(b) {
+  const p = '='.repeat((4 - b.length % 4) % 4);
+  const raw = atob((b + p).replace(/-/g, '+').replace(/_/g, '/'));
+  return Uint8Array.from(raw, (c) => c.charCodeAt(0));
+}
+async function enableNotifs() {
+  const perm = await Notification.requestPermission();
+  if (perm !== 'granted') { toast('Notifications refusées'); return false; }
+  const reg = swReg || await navigator.serviceWorker.ready;
+  const sub = await reg.pushManager.subscribe({ userVisibleOnly: true, applicationServerKey: b64ToU8(VAPID_PUBLIC) });
+  const j = sub.toJSON();
+  await window.BerailAPI('/api/push-sub', { method: 'POST', body: JSON.stringify({ token: S.token, endpoint: j.endpoint, p256dh: j.keys.p256dh, auth: j.keys.auth }) });
+  toast('🔔 Notifications activées');
+  return true;
+}
+async function disableNotifs() {
+  const reg = swReg || await navigator.serviceWorker.ready;
+  const sub = await reg.pushManager.getSubscription();
+  if (sub) await sub.unsubscribe();
+  await window.BerailAPI('/api/push-sub', { method: 'POST', body: JSON.stringify({ token: S.token, off: true }) });
+  toast('Notifications coupées');
+}
+function pushServer(path, body) {
+  return fetch(PUSH_URL + path, { method: 'POST', headers: { 'Content-Type': 'text/plain' }, body: JSON.stringify(body) })
+    .then((r) => r.json()).catch(() => null);
+}
+async function renderNotifPanel() {
+  const el = $('#notifPanel');
+  if (!el) return;
+  const st = await notifState().catch(() => 'unsupported');
+  const txt = {
+    install: "Sur iPad : touche Partager ⬆︎ puis « Sur l'écran d'accueil », et ouvre BeRail depuis la nouvelle icône. Le bouton pour activer les notifications apparaîtra ici.",
+    unsupported: "Ce navigateur ne gère pas les notifications. Sur iPad, ajoute BeRail à l'écran d'accueil (iPadOS 16.4 ou plus).",
+    denied: "Les notifications sont bloquées. Va dans Réglages → Notifications → BeRail pour les autoriser.",
+    off: "Reçois une alerte dès que c'est l'heure du BeRail, même quand l'app est fermée.",
+    on: "Activées sur cet appareil : tu seras prévenu à chaque BeRail."
+  }[st];
+  el.innerHTML = `<h3>Notifications</h3><p>${txt}</p>
+    ${st === 'off' ? '<button class="btn btn-primary" style="width:100%" id="nOn">🔔 Activer les notifications</button>' : ''}
+    ${st === 'on' ? '<div class="row"><button class="btn btn-primary" id="nTest">Tester</button><button class="btn btn-ghost" id="nOff">Couper</button></div>' : ''}`;
+  const on = $('#nOn'), off = $('#nOff'), test = $('#nTest');
+  if (on) on.onclick = async () => { on.disabled = true; try { await enableNotifs(); } catch (_) { toast('Impossible d\'activer'); } renderNotifPanel(); };
+  if (off) off.onclick = async () => { try { await disableNotifs(); } catch (_) {} renderNotifPanel(); };
+  if (test) test.onclick = async () => { toast('Envoi du test…'); const r = await pushServer('/test', { token: S.token }); if (!r || !r.sent) toast('Test pas encore arrivé, réessaie dans une minute'); };
 }
 
 function purgeModal() {
@@ -742,6 +808,7 @@ async function boot() {
     showScreen('screen-auth');
     const qs = new URLSearchParams(location.search);
     const asName = qs.get('as'), asCode = qs.get('code');
+    if (asCode && !asName) $('#inCode').value = asCode.toUpperCase();
     if (asName && asCode) {
       $('#inName').value = asName;
       $('#inCode').value = asCode.toUpperCase();

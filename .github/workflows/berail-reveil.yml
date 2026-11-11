@@ -1,0 +1,13 @@
+name: BeRail réveil
+# Toutes les 5 minutes : réveille le serveur de notifications (Render gratuit)
+# et lance les BeRail automatiques à l'heure prévue.
+on:
+  schedule:
+    - cron: '*/5 * * * *'
+  workflow_dispatch:
+jobs:
+  tick:
+    runs-on: ubuntu-latest
+    timeout-minutes: 3
+    steps:
+      - run: curl -fsS --max-time 120 https://berail-push.onrender.com/tick || true

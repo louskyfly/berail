@@ -216,6 +216,14 @@
       return { moment };
     }
 
+    if (method === 'POST' && route === '/api/push-sub') {
+      const u = await userFromToken(body.token);
+      if (body.off) { await del(`push/${u.classCode}/${u.id}`); return { ok: true }; }
+      if (!/^https:\/\//.test(body.endpoint || '')) fail(400, 'bad_endpoint');
+      await put(`push/${u.classCode}/${u.id}`, { endpoint: String(body.endpoint).slice(0, 800), p256dh: String(body.p256dh).slice(0, 200), auth: String(body.auth).slice(0, 60), name: u.name, at: nowIso() });
+      return { ok: true };
+    }
+
     if (method === 'POST' && route === '/api/purge') {
       const u = await userFromToken(body.token);
       const k = await klassOf(u.classCode);

@@ -5,19 +5,39 @@
         ".read": true,
         ".write": "$code.matches(/^[A-Z0-9-]{3,12}$/)",
         ".validate": "!newData.exists() || newData.hasChildren(['code'])",
-        "code": { ".validate": "newData.val() === $code" },
-        "name": { ".validate": "newData.isString() && newData.val().length <= 12" },
-        "owner": { ".validate": "newData.isString() && newData.val().length <= 16 && (!data.exists() || data.val() === newData.val())" },
-        "ownerName": { ".validate": "newData.isString() && newData.val().length <= 24" },
-        "createdAt": { ".validate": "newData.isString() && newData.val().length <= 30" },
-        "lastPurgeDay": { ".validate": "newData.isString() && newData.val().length <= 10" },
+        "code": {
+          ".validate": "newData.val() === $code"
+        },
+        "name": {
+          ".validate": "newData.isString() && newData.val().length <= 12"
+        },
+        "owner": {
+          ".validate": "newData.isString() && newData.val().length <= 16 && (!data.exists() || data.val() === newData.val())"
+        },
+        "ownerName": {
+          ".validate": "newData.isString() && newData.val().length <= 24"
+        },
+        "createdAt": {
+          ".validate": "newData.isString() && newData.val().length <= 30"
+        },
+        "lastPurgeDay": {
+          ".validate": "newData.isString() && newData.val().length <= 10"
+        },
         "moment": {
           ".validate": "newData.hasChildren(['at', 'by'])",
-          "at": { ".validate": "newData.isNumber()" },
-          "by": { ".validate": "newData.isString() && newData.val().length <= 24" },
-          "$other": { ".validate": false }
+          "at": {
+            ".validate": "newData.isNumber()"
+          },
+          "by": {
+            ".validate": "newData.isString() && newData.val().length <= 24"
+          },
+          "$other": {
+            ".validate": false
+          }
         },
-        "$other": { ".validate": false }
+        "$other": {
+          ".validate": false
+        }
       }
     },
     "users": {
@@ -25,11 +45,21 @@
         ".read": true,
         ".write": "$token.matches(/^[a-f0-9]{32}$/) && (!data.exists() || !newData.exists())",
         ".validate": "!newData.exists() || newData.hasChildren(['id', 'name', 'classCode', 'createdAt'])",
-        "id": { ".validate": "newData.isString() && newData.val().length <= 16" },
-        "name": { ".validate": "newData.isString() && newData.val().length >= 2 && newData.val().length <= 24" },
-        "classCode": { ".validate": "newData.isString() && newData.val().matches(/^[A-Z0-9-]{3,12}$/)" },
-        "createdAt": { ".validate": "newData.isString() && newData.val().length <= 30" },
-        "$other": { ".validate": false }
+        "id": {
+          ".validate": "newData.isString() && newData.val().length <= 16"
+        },
+        "name": {
+          ".validate": "newData.isString() && newData.val().length >= 2 && newData.val().length <= 24"
+        },
+        "classCode": {
+          ".validate": "newData.isString() && newData.val().matches(/^[A-Z0-9-]{3,12}$/)"
+        },
+        "createdAt": {
+          ".validate": "newData.isString() && newData.val().length <= 30"
+        },
+        "$other": {
+          ".validate": false
+        }
       }
     },
     "posts": {
@@ -38,27 +68,55 @@
         "$postId": {
           ".write": "$postId.matches(/^[a-f0-9]{16}$/)",
           ".validate": "!newData.exists() || newData.hasChildren(['id', 'shareCode', 'userId', 'userName', 'classCode', 'createdAt'])",
-          "id": { ".validate": "newData.val() === $postId" },
-          "shareCode": { ".validate": "newData.isString() && newData.val().matches(/^[A-F0-9]{6}$/)" },
-          "userId": { ".validate": "newData.isString() && newData.val().length <= 16" },
-          "userName": { ".validate": "newData.isString() && newData.val().length <= 24" },
-          "classCode": { ".validate": "newData.val() === $code" },
-          "caption": { ".validate": "newData.isString() && newData.val().length <= 140" },
-          "late": { ".validate": "newData.isBoolean()" },
-          "createdAt": { ".validate": "newData.isString() && newData.val().length <= 30" },
+          "id": {
+            ".validate": "newData.val() === $postId"
+          },
+          "shareCode": {
+            ".validate": "newData.isString() && newData.val().matches(/^[A-F0-9]{6}$/)"
+          },
+          "userId": {
+            ".validate": "newData.isString() && newData.val().length <= 16"
+          },
+          "userName": {
+            ".validate": "newData.isString() && newData.val().length <= 24"
+          },
+          "classCode": {
+            ".validate": "newData.val() === $code"
+          },
+          "caption": {
+            ".validate": "newData.isString() && newData.val().length <= 140"
+          },
+          "late": {
+            ".validate": "newData.isBoolean()"
+          },
+          "createdAt": {
+            ".validate": "newData.isString() && newData.val().length <= 30"
+          },
           "reactions": {
-            "$userId": { ".validate": "newData.isString() && newData.val().length <= 4" }
+            "$userId": {
+              ".validate": "newData.isString() && newData.val().length <= 4"
+            }
           },
           "comments": {
             "$cid": {
               ".validate": "newData.hasChildren(['name', 'text', 'at'])",
-              "name": { ".validate": "newData.isString() && newData.val().length <= 24" },
-              "text": { ".validate": "newData.isString() && newData.val().length >= 1 && newData.val().length <= 160" },
-              "at": { ".validate": "newData.isString() && newData.val().length <= 30" },
-              "$other": { ".validate": false }
+              "name": {
+                ".validate": "newData.isString() && newData.val().length <= 24"
+              },
+              "text": {
+                ".validate": "newData.isString() && newData.val().length >= 1 && newData.val().length <= 160"
+              },
+              "at": {
+                ".validate": "newData.isString() && newData.val().length <= 30"
+              },
+              "$other": {
+                ".validate": false
+              }
             }
           },
-          "$other": { ".validate": false }
+          "$other": {
+            ".validate": false
+          }
         }
       }
     },
@@ -74,9 +132,41 @@
         ".read": true,
         ".write": "$share.matches(/^[A-F0-9]{6}$/)",
         ".validate": "newData.hasChildren(['classCode', 'postId'])",
-        "classCode": { ".validate": "newData.isString() && newData.val().length <= 12" },
-        "postId": { ".validate": "newData.isString() && newData.val().length <= 16" },
-        "$other": { ".validate": false }
+        "classCode": {
+          ".validate": "newData.isString() && newData.val().length <= 12"
+        },
+        "postId": {
+          ".validate": "newData.isString() && newData.val().length <= 16"
+        },
+        "$other": {
+          ".validate": false
+        }
+      }
+    },
+    "push": {
+      "$code": {
+        "$uid": {
+          ".write": "$code.matches(/^[A-Z0-9-]{3,12}$/) && $uid.matches(/^[a-f0-9]{12}$/)",
+          ".validate": "newData.hasChildren(['endpoint','p256dh','auth'])",
+          "endpoint": {
+            ".validate": "newData.isString() && newData.val().beginsWith('https://') && newData.val().length <= 800"
+          },
+          "p256dh": {
+            ".validate": "newData.isString() && newData.val().length <= 200"
+          },
+          "auth": {
+            ".validate": "newData.isString() && newData.val().length <= 60"
+          },
+          "name": {
+            ".validate": "newData.isString() && newData.val().length <= 24"
+          },
+          "at": {
+            ".validate": "newData.isString() && newData.val().length <= 30"
+          },
+          "$other": {
+            ".validate": false
+          }
+        }
       }
     }
   }

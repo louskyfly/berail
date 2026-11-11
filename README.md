@@ -19,7 +19,7 @@ Les élèves entrent un prénom et le code de la classe, et c'est parti.
 L'app tourne sur **https://berail-lucas.web.app** (Firebase Hosting, projet `sync-3626f`).
 Les données (classes, comptes, BeRail, photos, réactions, commentaires) sont dans
 Firebase Realtime Database sous le nœud `/berail`, via `public/firebase-api.js` :
-plus besoin du serveur Node ni de Render. Les photos sont toujours effacées chaque soir à 23h.
+plus besoin du serveur Node ni de Render. Les BeRail restent 7 jours puis sont effacés.
 
 Règles de sécurité du nœud `/berail` : `database.rules.berail.json` (à fusionner dans les règles du projet).
 
@@ -92,6 +92,16 @@ L'organisateur peut aussi vider à la main : **Profil → Vider les photos maint
 | `PURGE_HOUR` | `23` | Heure du nettoyage (0–23), dans le fuseau ci-dessous |
 | `TZ_NAME` | `Europe/Paris` | Fuseau utilisé pour « la fin de la journée » |
 | `DATA_DIR` | `./data` | Dossier des photos + `db.json` (à monter sur un disque persistant) |
+
+## Admin, horaires et notifications
+
+- App publique : https://berail-lucas.web.app
+- Admin : https://berail-lucas.web.app/admin (mot de passe admin)
+- `push/` : petit serveur Node (Render, offre gratuite) qui envoie les notifications Web Push,
+  lance les BeRail automatiques aux horaires réglés dans l'admin et efface les BeRail de plus de 7 jours.
+  Ses secrets sont chiffrés dans `push/secrets.enc` ; seule la variable `BERAIL_SECRET` est à régler sur Render.
+- `.github/workflows/berail-reveil.yml` réveille ce serveur toutes les 5 minutes.
+- Sur iPad/iPhone, les notifications marchent quand BeRail est ajouté à l'écran d'accueil (iPadOS 16.4+).
 
 ## Déployer sur Render
 

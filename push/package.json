@@ -1,0 +1,9 @@
+{
+  "name": "berail-push",
+  "version": "1.0.0",
+  "private": true,
+  "description": "BeRail : serveur de notifications, horaires automatiques et administration.",
+  "engines": { "node": ">=20" },
+  "scripts": { "start": "node server.js" },
+  "dependencies": { "web-push": "^3.6.7" }
+}
