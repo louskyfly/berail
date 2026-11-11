@@ -1169,6 +1169,37 @@
       ".validate": "newData.isBoolean()"
      }
     }
+   },
+   "accounts": {
+    "$pseudo": {
+     ".read": true,
+     ".write": "!data.exists() && newData.exists() && $pseudo.matches(/^[a-z0-9_~-]{3,20}$/)",
+     ".validate": "newData.hasChildren(['pseudo','salt','iv','enc','userId','classCode','createdAt'])",
+     "pseudo": {
+      ".validate": "newData.isString() && newData.val().length <= 20"
+     },
+     "salt": {
+      ".validate": "newData.isString() && newData.val().length <= 64"
+     },
+     "iv": {
+      ".validate": "newData.isString() && newData.val().length <= 64"
+     },
+     "enc": {
+      ".validate": "newData.isString() && newData.val().length <= 400"
+     },
+     "userId": {
+      ".validate": "newData.isString() && newData.val().length <= 16"
+     },
+     "classCode": {
+      ".validate": "newData.isString() && newData.val().length <= 12"
+     },
+     "createdAt": {
+      ".validate": "newData.isString() && newData.val().length <= 30"
+     },
+     "$other": {
+      ".validate": false
+     }
+    }
    }
   }
  }

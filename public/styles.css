@@ -384,3 +384,11 @@ button{font:inherit;color:inherit;background:none;border:0;padding:0;cursor:poin
 .stk-ok{background:#fff;color:#111}
 .flip-btn{font-size:18px;font-weight:800}
 .post-media.flipped .flip-btn{background:#fff;color:#111}
+
+/* ── Comptes ── */
+.auth-tabs{display:flex;gap:4px;padding:4px;border-radius:14px;background:rgba(127,127,127,.12);margin-bottom:18px}
+.auth-tabs button{flex:1;padding:10px;border-radius:10px;font-weight:700;font-size:14px;color:var(--muted)}
+.auth-tabs button.on{background:var(--surface);color:var(--fg);box-shadow:0 1px 4px rgba(0,0,0,.12)}
+#joinForm[data-mode="login"] .reg-only{display:none}
+.acct-line{display:flex;align-items:center;gap:8px;font-weight:700;margin:4px 0 12px}
+.acct-line .ok{color:#1a9b5a}

@@ -28,20 +28,28 @@
         <span class="brand-dot"></span>BeRail
       </div>
       <p class="auth-tag">Le BeReal de ta classe.<br>Un moment. Deux photos. Un code.</p>
-      <form id="joinForm" class="auth-form" autocomplete="off">
+      <div class="auth-tabs" role="tablist">
+        <button type="button" class="on" data-tab="login" role="tab">Se connecter</button>
+        <button type="button" data-tab="register" role="tab">Créer un compte</button>
+      </div>
+      <form id="joinForm" class="auth-form" data-mode="login">
         <label class="field">
-          <span>Ton prénom</span>
-          <input id="inName" maxlength="24" placeholder="Ex. Léa" autocomplete="off" required>
+          <span>Pseudo</span>
+          <input id="inPseudo" maxlength="20" placeholder="Ex. lea.m" autocomplete="username" autocapitalize="none" spellcheck="false" required>
         </label>
         <label class="field">
+          <span>Mot de passe</span>
+          <input id="inPass" type="password" maxlength="64" placeholder="6 caractères minimum" autocomplete="current-password" required>
+        </label>
+        <label class="field reg-only">
           <span>Code de la classe</span>
-          <input id="inCode" maxlength="12" placeholder="Ex. 209" autocapitalize="characters" autocomplete="off" required>
+          <input id="inCode" maxlength="12" placeholder="Ex. 209" autocapitalize="characters" autocomplete="off">
         </label>
         <p id="authError" class="error hidden"></p>
-        <button type="submit" class="btn btn-primary" id="joinBtn">Entrer</button>
+        <button type="submit" class="btn btn-primary" id="joinBtn">Se connecter</button>
         <button type="button" class="btn btn-ghost hidden" id="createBtn">Créer la classe</button>
       </form>
-      <p class="auth-foot">Pas de compte, pas d'e-mail. Juste un code donné par le prof.</p>
+      <p class="auth-foot" id="authFoot">Ton pseudo et ton mot de passe te suivent sur tous tes appareils.</p>
     </div>
   </section>
 

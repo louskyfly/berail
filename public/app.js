@@ -103,41 +103,75 @@ function showScreen(id) {
 }
 
 /* ---------- auth ---------- */
+const AUTH_ERR = {
+  bad_login: 'Pseudo ou mot de passe incorrect.',
+  pseudo_taken: 'Ce pseudo est déjà pris.',
+  bad_pseudo: 'Pseudo : 3 à 20 caractères (lettres, chiffres, . _ -), sans espace.',
+  weak_password: 'Le mot de passe doit faire au moins 6 caractères.',
+  bad_code: 'Le code doit faire 3 à 12 caractères (lettres, chiffres, tiret).',
+  account_gone: 'Ce compte a été supprimé par l’admin.',
+  name_too_short: 'Le pseudo doit faire au moins 3 caractères.'
+};
+function authMode(m) {
+  $('#joinForm').dataset.mode = m;
+  $$('.auth-tabs button').forEach((b) => b.classList.toggle('on', b.dataset.tab === m));
+  $('#joinBtn').textContent = m === 'login' ? 'Se connecter' : 'Créer mon compte';
+  $('#inPass').autocomplete = m === 'login' ? 'current-password' : 'new-password';
+  $('#inCode').required = m === 'register';
+  $('#authError').classList.add('hidden'); $('#createBtn').classList.add('hidden');
+}
 async function join(create) {
-  const name = $('#inName').value.trim();
+  const mode = $('#joinForm').dataset.mode;
+  const pseudo = $('#inPseudo').value.trim(), password = $('#inPass').value;
   const code = $('#inCode').value.trim().toUpperCase();
   const err = $('#authError');
   err.classList.add('hidden');
-  $('#joinBtn').disabled = true;
+  $('#joinBtn').disabled = true; $('#createBtn').disabled = true;
   try {
-    const r = await API('/api/join', {
-      method: 'POST', headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ name, code, create })
-    });
+    const r = mode === 'login'
+      ? await API('/api/login', { method: 'POST', body: JSON.stringify({ pseudo, password }) })
+      : await API('/api/register', { method: 'POST', body: JSON.stringify({ pseudo, password, code, create }) });
     S.token = r.token;
     localStorage.setItem('berail.token', r.token);
+    localStorage.setItem('berail.pseudo', r.pseudo || pseudo);
     S.user = r.user; S.klass = r.klass; S.moment = r.klass.moment;
+    $('#inPass').value = '';
     await enterApp();
   } catch (e) {
-    $('#joinBtn').disabled = false;
-    if (e.data && e.data.error === 'unknown_class') {
+    const c = e.data && e.data.error;
+    if (c === 'unknown_class') {
       err.textContent = `La classe « ${code} » n'existe pas encore.`;
-      err.classList.remove('hidden');
       const cb = $('#createBtn');
       cb.classList.remove('hidden');
       cb.textContent = `Créer la classe « ${code} »`;
-      cb.dataset.code = code;
-    } else if (e.data && e.data.error === 'name_too_short') {
-      err.textContent = 'Ton prénom doit faire au moins 2 lettres.';
-      err.classList.remove('hidden');
-    } else if (e.data && e.data.error === 'bad_code') {
-      err.textContent = 'Le code doit faire 3 à 12 caractères (lettres, chiffres, tiret).';
-      err.classList.remove('hidden');
-    } else {
-      err.textContent = 'Connexion impossible. Vérifie le réseau.';
-      err.classList.remove('hidden');
-    }
-  }
+    } else err.textContent = AUTH_ERR[c] || 'Connexion impossible. Vérifie le réseau.';
+    err.classList.remove('hidden');
+  } finally { $('#joinBtn').disabled = false; $('#createBtn').disabled = false; }
+}
+
+function secureModal() {
+  openModal(`<div class="sheet">
+    <h3>Sécuriser mon compte</h3>
+    <p>Choisis un pseudo et un mot de passe pour retrouver ton compte et tes BeRail sur n'importe quel appareil.</p>
+    <form id="secForm" class="auth-form" style="margin-top:14px">
+      <label class="field"><span>Pseudo</span><input id="secPseudo" maxlength="20" autocomplete="username" autocapitalize="none" spellcheck="false" value="${esc((S.user.name || '').toLowerCase().replace(/[^a-z0-9_.-]/g, ''))}" required></label>
+      <label class="field"><span>Mot de passe</span><input id="secPass" type="password" maxlength="64" autocomplete="new-password" placeholder="6 caractères minimum" required></label>
+      <label class="field"><span>Confirme le mot de passe</span><input id="secPass2" type="password" maxlength="64" autocomplete="new-password" required></label>
+      <p id="secErr" class="error hidden"></p>
+      <button class="btn btn-primary" type="submit">Enregistrer</button>
+      <button class="btn btn-ghost" type="button" data-close>Annuler</button>
+    </form></div>`);
+  $('#secForm').onsubmit = async (e) => {
+    e.preventDefault();
+    const er = $('#secErr'); er.classList.add('hidden');
+    const pseudo = $('#secPseudo').value.trim(), password = $('#secPass').value;
+    if (password !== $('#secPass2').value) { er.textContent = 'Les deux mots de passe sont différents.'; er.classList.remove('hidden'); return; }
+    try {
+      const r = await API('/api/secure', { method: 'POST', body: JSON.stringify({ token: S.token, pseudo, password }) });
+      localStorage.setItem('berail.pseudo', r.pseudo);
+      closeModal(); renderProfile(); toast('Compte sécurisé 🔒');
+    } catch (x) { er.textContent = AUTH_ERR[x.data && x.data.error] || 'Impossible pour le moment.'; er.classList.remove('hidden'); }
+  };
 }
 
 async function enterApp() {
@@ -152,7 +186,8 @@ async function enterApp() {
 }
 
 async function logout() {
-  localStorage.removeItem('berail.token');
+  if (!localStorage.getItem('berail.pseudo') && !confirm("Ton compte n'a pas de mot de passe : tu ne pourras plus y revenir. Changer quand même ?")) return;
+  localStorage.removeItem('berail.token'); localStorage.removeItem('berail.pseudo');
   location.reload();
 }
 
@@ -591,8 +626,11 @@ function renderProfile() {
     </div>
     <div class="panel">
       <h3>Mon compte</h3>
-      <p>Chaque BeRail publié possède son propre code à 6 caractères. Tu peux changer de compte sans perdre tes publications.</p>
-      <button class="btn btn-ghost" style="width:100%" id="pLogout">Changer de compte</button>
+      ${localStorage.getItem('berail.pseudo')
+        ? `<p class="acct-line"><span class="ok">🔒</span> Connecté en tant que @${esc(localStorage.getItem('berail.pseudo'))}</p>`
+        : `<p>Ton compte n'a pas encore de mot de passe. Sécurise-le pour le retrouver sur un autre appareil.</p>
+           <button class="btn btn-primary" style="width:100%;margin-bottom:10px" id="pSecure">Sécuriser mon compte</button>`}
+      <button class="btn btn-ghost" style="width:100%" id="pLogout">Se déconnecter</button>
     </div>`;
 
   document.querySelectorAll('.theme-opt').forEach((b) => { b.onclick = () => { applyTheme(b.dataset.themeId); renderProfile(); }; });
@@ -613,6 +651,7 @@ function renderProfile() {
   if (isOwner) $('#pPurge').onclick = purgeModal;
   renderNotifPanel();
   $('#pLogout').onclick = logout;
+  if ($('#pSecure')) $('#pSecure').onclick = secureModal;
 }
 
 /* ---------- notifications ---------- */
@@ -903,13 +942,8 @@ async function boot() {
   if (!S.token) {
     showScreen('screen-auth');
     const qs = new URLSearchParams(location.search);
-    const asName = qs.get('as'), asCode = qs.get('code');
-    if (asCode && !asName) $('#inCode').value = asCode.toUpperCase();
-    if (asName && asCode) {
-      $('#inName').value = asName;
-      $('#inCode').value = asCode.toUpperCase();
-      await join(true);
-    }
+    const asCode = qs.get('code');
+    if (asCode) { authMode('register'); $('#inCode').value = asCode.toUpperCase(); }
     return;
   }
   try {
@@ -925,6 +959,7 @@ async function boot() {
 
 /* ---------- écouteurs ---------- */
 $('#joinForm').addEventListener('submit', (e) => { e.preventDefault(); join(false); });
+$$('.auth-tabs button').forEach((b) => { b.onclick = () => authMode(b.dataset.tab); });
 $('#createBtn').addEventListener('click', () => join(true));
 $('#classChip').addEventListener('click', classModal);
 $('#openCapture').addEventListener('click', openCapture);

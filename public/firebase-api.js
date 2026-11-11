@@ -95,6 +95,30 @@
   window.BerailPhoto = photoOf;
 
   let meCache = null;
+
+  /* ---------- comptes (pseudo + mot de passe) ----------
+     Le jeton de session est chiffré (AES-GCM) avec une clé tirée du mot de passe (PBKDF2, 210 000 tours).
+     Sans le bon mot de passe, impossible de récupérer le jeton. */
+  const b64 = (u8) => btoa(String.fromCharCode(...new Uint8Array(u8)));
+  const unb64 = (s) => Uint8Array.from(atob(s), (c) => c.charCodeAt(0));
+  const pseudoKey = (p) => String(p || '').trim().toLowerCase().replace(/\./g, '~'); // « . » interdit dans les clés Firebase
+  async function pwKey(password, salt) {
+    const base = await crypto.subtle.importKey('raw', new TextEncoder().encode(password), 'PBKDF2', false, ['deriveKey']);
+    return crypto.subtle.deriveKey({ name: 'PBKDF2', salt, iterations: 210000, hash: 'SHA-256' }, base, { name: 'AES-GCM', length: 256 }, false, ['encrypt', 'decrypt']);
+  }
+  function checkCreds(pseudo, password) {
+    if (!/^[a-z0-9_~-]{3,20}$/.test(pseudoKey(pseudo))) fail(400, 'bad_pseudo');
+    if (String(password || '').length < 6) fail(400, 'weak_password');
+  }
+  async function saveAccount(pseudo, password, token, user) {
+    const salt = crypto.getRandomValues(new Uint8Array(16)), iv = crypto.getRandomValues(new Uint8Array(12));
+    const key = await pwKey(password, salt);
+    const enc = await crypto.subtle.encrypt({ name: 'AES-GCM', iv }, key, new TextEncoder().encode(token));
+    try {
+      await put(`accounts/${pseudoKey(pseudo)}`, { pseudo: String(pseudo).trim(), salt: b64(salt), iv: b64(iv), enc: b64(enc), userId: user.id, classCode: user.classCode, createdAt: nowIso() });
+    } catch (_) { fail(409, 'pseudo_taken'); }
+  }
+
   async function userFromToken(token) {
     if (!token || !/^[a-f0-9]{32}$/.test(token)) fail(401, 'unauthorized');
     if (meCache && meCache.token === token) return meCache.user;
@@ -180,6 +204,38 @@
       }
       meCache = { token, user };
       return { token, user: publicUser(user, k), klass: klassView(k) };
+    }
+
+    if (method === 'POST' && route === '/api/register') {
+      checkCreds(body.pseudo, body.password);
+      if (await get(`accounts/${pseudoKey(body.pseudo)}`)) fail(409, 'pseudo_taken');
+      const r = await api('/api/join', { method: 'POST', body: JSON.stringify({ name: String(body.pseudo).trim(), code: body.code, create: body.create }) });
+      try { await saveAccount(body.pseudo, body.password, r.token, r.user); }
+      catch (e) { await del(`users/${r.token}`).catch(() => {}); throw e; }
+      r.pseudo = String(body.pseudo).trim();
+      return r;
+    }
+
+    if (method === 'POST' && route === '/api/login') {
+      const a = await get(`accounts/${pseudoKey(body.pseudo)}`);
+      if (!a) fail(401, 'bad_login');
+      let token;
+      try {
+        const key = await pwKey(String(body.password || ''), unb64(a.salt));
+        token = new TextDecoder().decode(await crypto.subtle.decrypt({ name: 'AES-GCM', iv: unb64(a.iv) }, key, unb64(a.enc)));
+      } catch (_) { fail(401, 'bad_login'); }
+      meCache = null;
+      const u = await userFromToken(token).catch(() => fail(410, 'account_gone'));
+      const k = await klassOf(u.classCode);
+      return { token, pseudo: a.pseudo, user: publicUser(u, k), klass: klassView(k) };
+    }
+
+    if (method === 'POST' && route === '/api/secure') {
+      const u = await userFromToken(body.token);
+      checkCreds(body.pseudo, body.password);
+      if (await get(`accounts/${pseudoKey(body.pseudo)}`)) fail(409, 'pseudo_taken');
+      await saveAccount(body.pseudo, body.password, body.token, u);
+      return { pseudo: String(body.pseudo).trim() };
     }
 
     if (method === 'GET' && route === '/api/me') {
