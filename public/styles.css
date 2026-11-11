@@ -292,3 +292,39 @@ button{font:inherit;color:inherit;background:none;border:0;padding:0;cursor:poin
 .switch input{accent-color:var(--brand)}
 .toast{background:var(--fg);color:var(--bg)}
 .capture .btn-primary{background:#fff;color:#111}
+
+/* ── Dégradés sur le reste de la page ── */
+html,body{background:var(--bg)}
+body{background:
+  radial-gradient(70% 45% at 0% 0%,color-mix(in srgb,#5b4bff 14%,transparent),transparent 70%),
+  radial-gradient(60% 40% at 100% 10%,color-mix(in srgb,#ff4f8b 12%,transparent),transparent 70%),
+  radial-gradient(70% 45% at 50% 100%,color-mix(in srgb,#22c3b5 10%,transparent),transparent 70%),
+  var(--bg);background-attachment:fixed}
+.brand,.logo-sm,.view-head h2,.profile-card h2,.class-head h2{
+  background:linear-gradient(120deg,#5b4bff,#ff4f8b 60%,#ff9a3c);-webkit-background-clip:text;background-clip:text;color:transparent}
+.brand .brand-dot{-webkit-background-clip:border-box;background-clip:border-box}
+.topbar,.tabbar{background:color-mix(in srgb,var(--bg) 78%,transparent)}
+.topbar{border-bottom:1px solid transparent;border-image:linear-gradient(90deg,transparent,#5b4bff55,#ff4f8b55,transparent) 1}
+.tabbar{border-top:1px solid transparent;border-image:linear-gradient(90deg,transparent,#5b4bff55,#ff4f8b55,transparent) 1}
+.post,.panel,.profile-card,.stat,.empty,.shared-card{
+  border:1px solid transparent;
+  background:linear-gradient(var(--surface),var(--surface)) padding-box,
+             linear-gradient(135deg,#5b4bff40,#ff4f8b40,#22c3b540) border-box}
+.profile-card{background:linear-gradient(135deg,color-mix(in srgb,#5b4bff 10%,var(--surface)),color-mix(in srgb,#ff4f8b 10%,var(--surface))) padding-box,
+             linear-gradient(135deg,#5b4bff60,#ff4f8b60) border-box}
+.stat:nth-child(1){background:linear-gradient(160deg,color-mix(in srgb,#5b4bff 12%,var(--surface)),var(--surface)) padding-box,linear-gradient(135deg,#5b4bff50,transparent) border-box}
+.stat:nth-child(2){background:linear-gradient(160deg,color-mix(in srgb,#ff4f8b 12%,var(--surface)),var(--surface)) padding-box,linear-gradient(135deg,#ff4f8b50,transparent) border-box}
+.stat:nth-child(3){background:linear-gradient(160deg,color-mix(in srgb,#22c3b5 14%,var(--surface)),var(--surface)) padding-box,linear-gradient(135deg,#22c3b550,transparent) border-box}
+.stat b{background:linear-gradient(120deg,#5b4bff,#ff4f8b);-webkit-background-clip:text;background-clip:text;color:transparent}
+.empty-icon{background:var(--grad);-webkit-background-clip:text;background-clip:text}
+.day-label small,.chip{background:color-mix(in srgb,#5b4bff 10%,var(--surface-2))}
+.day-label{padding-left:12px;border-left:4px solid transparent;border-image:linear-gradient(#5b4bff,#ff4f8b) 1}
+.mini-btn{background:var(--brand-soft);color:var(--brand)}
+.btn-ghost{background:linear-gradient(var(--surface),var(--surface)) padding-box,linear-gradient(135deg,#5b4bff80,#ff4f8b80) border-box;border:1px solid transparent}
+.btn-primary{background:var(--grad)}
+.comment-form button{background:var(--grad)}
+.code-big,.share-code{background:linear-gradient(120deg,#5b4bff,#ff4f8b);-webkit-background-clip:text;background-clip:text;color:transparent}
+.grid figure{box-shadow:0 0 0 1.5px #5b4bff30}
+.panel h3::before{content:"";display:inline-block;width:8px;height:8px;border-radius:50%;margin-right:8px;vertical-align:1px;background:var(--grad)}
+.sec{border-top:1px solid transparent;border-image:linear-gradient(90deg,#5b4bff55,#ff4f8b55,transparent) 1}
+.capture .btn-primary{background:#fff;color:#111}
