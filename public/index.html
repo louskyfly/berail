@@ -12,7 +12,11 @@
 <link rel="manifest" href="/manifest.webmanifest">
 <link rel="apple-touch-icon" href="/icon-180.png">
 <link rel="icon" href="/icon-180.png">
+<script>(function(){var t=localStorage.getItem('berail.theme')||'ardoise';if(t!=='classique')document.documentElement.setAttribute('data-theme',t);window.__theme=t;})();</script>
 <link rel="stylesheet" href="/styles.css">
+<link rel="stylesheet" href="/classic.css" id="classicCss">
+<link rel="stylesheet" href="/themes.css">
+<script>if(window.__theme!=='classique')document.getElementById('classicCss').disabled=true;</script>
 </head>
 <body>
 <div id="app">

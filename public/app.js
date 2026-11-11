@@ -508,6 +508,34 @@ function renderMemories() {
   });
 }
 
+/* ---------- thèmes ---------- */
+const THEMES = [
+  { id: 'ardoise', name: 'Ardoise', desc: 'Noir, blanc, tes photos', sw: ['#121417', '#f4f5f7', '#363b43'] },
+  { id: 'edito', name: 'Éditorial', desc: 'Magazine, point rouge', sw: ['#fafaf7', '#0e0e0e', '#d7263d'] },
+  { id: 'foret', name: 'Forêt', desc: 'Vert sauge et sable', sw: ['#131a16', '#8fb38a', '#e6d8b8'] },
+  { id: 'classique', name: 'Couleurs', desc: 'Violet et rose', sw: ['#5b4bff', '#ff4f8b', '#22c3b5'] },
+];
+const THEME_BAR = { ardoise: '#121417', edito: '#fafaf7', foret: '#131a16' };
+function currentTheme() { return localStorage.getItem('berail.theme') || 'ardoise'; }
+function applyTheme(id) {
+  localStorage.setItem('berail.theme', id);
+  const root = document.documentElement;
+  if (id === 'classique') root.removeAttribute('data-theme'); else root.setAttribute('data-theme', id);
+  const c = document.getElementById('classicCss'); if (c) c.disabled = id !== 'classique';
+  setThemeColor(id);
+}
+function setThemeColor(id) {
+  document.querySelectorAll('meta[name="theme-color"]').forEach((m) => { if (THEME_BAR[id]) m.setAttribute('content', THEME_BAR[id]); });
+}
+setThemeColor(currentTheme());
+// Ardoise : chaque carte prend un halo de la couleur de sa photo
+document.addEventListener('load', (e) => {
+  const img = e.target;
+  if (!(img instanceof HTMLImageElement) || !img.closest('.post-media')) return;
+  const post = img.closest('.post');
+  if (post && img.currentSrc) post.style.setProperty('--glow', 'url("' + img.currentSrc + '")');
+}, true);
+
 function renderProfile() {
   const mine = S.posts.filter((p) => p.mine);
   const reactions = mine.reduce((n, p) => n + (p.reactionTotal || 0), 0);
@@ -535,6 +563,11 @@ function renderProfile() {
       <p>Tu es l'organisateur : lance le BeRail quand tu veux. Toute la classe reçoit une notification.</p>
       <button class="btn btn-primary" style="width:100%" id="pMoment">${S.moment ? 'Relancer le moment' : '⚡ Lancer le moment'}</button>
     </div>` : ''}
+    <div class="panel">
+      <h3>Apparence</h3>
+      <p>Choisis le style de BeRail sur cet appareil.</p>
+      <div class="theme-grid">${THEMES.map((t) => `<button class="theme-opt${currentTheme() === t.id ? ' on' : ''}" data-theme-id="${t.id}"><span class="sw">${t.sw.map((c) => `<i style="background:${c}"></i>`).join('')}</span><b>${t.name}</b><small>${t.desc}</small></button>`).join('')}</div>
+    </div>
     <div class="panel" id="notifPanel"></div>
     <div class="panel">
       <h3>Espace & nettoyage</h3>
@@ -547,6 +580,7 @@ function renderProfile() {
       <button class="btn btn-ghost" style="width:100%" id="pLogout">Changer de compte</button>
     </div>`;
 
+  document.querySelectorAll('.theme-opt').forEach((b) => { b.onclick = () => { applyTheme(b.dataset.themeId); renderProfile(); }; });
   $('#pAvatar').onclick = avatarEditor;
   $('#pAvatar2').onclick = avatarEditor;
   $('#pCopy').onclick = () => copy(S.klass.code, 'Code copié');

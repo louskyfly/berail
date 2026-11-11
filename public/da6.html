@@ -1,0 +1,43 @@
+<!doctype html><html lang="fr"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>DA 6 · Terre</title>
+<style>
+:root{--bg:#1f1a17;--card:#2a2420;--fg:#f3e9dc;--muted:#a8998a;--terra:#d9805f;--sage:#9bb39a;--sand:#e6cfa7}
+*{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--fg);font-family:ui-rounded,"SF Pro Rounded","Nunito",system-ui,sans-serif}
+.wrap{max-width:430px;margin:0 auto;padding:0 16px 130px}
+header{display:flex;justify-content:space-between;align-items:center;padding:22px 0 14px}
+.logo{font-weight:800;font-size:28px;letter-spacing:-.03em}.logo i{font-style:normal;color:var(--terra)}
+.chip{font-weight:700;font-size:13px;background:var(--card);padding:7px 12px;border-radius:999px;color:var(--sand)}
+.moment{background:var(--terra);color:#2a1a12;border-radius:26px;padding:18px;display:flex;justify-content:space-between;align-items:center}
+.moment h3{margin:0;font-size:20px;font-weight:800}.moment small{font-weight:700;opacity:.75}
+.moment button{background:#2a1a12;color:var(--sand);border:0;border-radius:999px;font:inherit;font-weight:800;padding:11px 16px}
+h2{font-size:38px;font-weight:800;letter-spacing:-.03em;margin:26px 0 2px}
+.sub{margin:0 0 18px;color:var(--muted);font-weight:600}
+.post{background:var(--card);border-radius:30px;padding:10px;margin:0 0 22px}
+.post img{width:100%;aspect-ratio:4/5;object-fit:cover;display:block;border-radius:22px}
+.head{display:flex;align-items:center;gap:10px;padding:12px 6px 4px}
+.av{width:40px;height:40px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-weight:800;color:#2a1a12}
+.head b{font-weight:800;font-size:16px}.head small{display:block;color:var(--muted);font-weight:600}
+.late{margin-left:auto;background:rgba(217,128,95,.18);color:var(--terra);border-radius:999px;font-weight:800;font-size:12px;padding:4px 10px}
+.cap{margin:8px 6px;font-size:16px;font-weight:600}
+.re{padding:2px 4px 6px}.re span{display:inline-block;background:#3a322c;border-radius:999px;padding:6px 12px;margin-right:6px;font-weight:700}
+nav{position:fixed;left:12px;right:12px;bottom:14px;max-width:430px;margin:0 auto;background:#2a2420;border-radius:28px;display:flex;justify-content:space-around;align-items:center;padding:9px 0;box-shadow:0 10px 30px rgba(0,0,0,.4)}
+nav span{font-weight:700;font-size:12px;color:var(--muted)}nav span.on{color:var(--sand)}
+.shutter{width:56px;height:56px;border-radius:50%;background:var(--sand);display:flex;align-items:center;justify-content:center}.shutter i{width:22px;height:22px;border-radius:50%;background:var(--terra)}
+.spec{background:var(--card);border-radius:26px;padding:18px}
+.spec b{font-weight:800;font-size:17px}
+.sw{display:flex;gap:8px;margin:12px 0}.sw i{width:40px;height:40px;border-radius:50%}
+.icon{display:flex;gap:16px;align-items:center;font-weight:700;color:var(--muted)}
+</style></head><body><div class="wrap">
+<header><div class="logo">Be<i>Rail</i></div><span class="chip">Classe 209</span></header>
+<div class="moment"><div><small>1 min 42 restante</small><h3>C'est l'heure du BeRail</h3></div><button>Poster</button></div>
+<h2>Le fil</h2><p class="sub">Mercredi · 2 BeRail aujourd'hui</p>
+<div id="feed"></div>
+<div class="spec"><b>DA 6 — Terre</b>
+<p style="font-size:16px;line-height:1.5;color:#d8ccbd">Sombre mais chaud : brun profond, terracotta, sauge et sable. Formes très arrondies, typo ronde. Doux pour les yeux, cosy, rien de criard.</p>
+<div class="sw"><i style="background:#1f1a17;border:1px solid #444"></i><i style="background:#d9805f"></i><i style="background:#9bb39a"></i><i style="background:#e6cfa7"></i></div>
+<div class="icon"><svg width="96" height="96" viewBox="0 0 96 96"><rect width="96" height="96" rx="22" fill="#d9805f"/><rect x="17" y="31" width="62" height="42" rx="14" fill="#2a1a12"/><rect x="35" y="23" width="22" height="11" rx="5" fill="#2a1a12"/><circle cx="48" cy="52" r="12" fill="#e6cfa7"/><circle cx="48" cy="52" r="5" fill="#9bb39a"/></svg><span>Icône : appareil arrondi, tons terre</span></div></div>
+</div><nav><span class="on">Fil</span><span>Souvenirs</span><div class="shutter"><i></i></div><span>Profil</span><span>Inviter</span></nav>
+<script src="/da-common.js"></script><script>
+const C=['#9bb39a','#e6cfa7'];
+document.getElementById('feed').innerHTML=MOCK.posts.map((p,i)=>`<div class="post"><img src="${p.img}"><div class="head"><div class="av" style="background:${C[i]}">${p.name[0]}</div><div><b>${p.name}</b><small>${p.time}</small></div>${p.late?'<span class="late">en retard</span>':''}</div>
+<p class="cap">${p.cap}</p><div class="re">${p.r.map(x=>`<span>${x}</span>`).join('')}</div></div>`).join('')
+</script></body></html>

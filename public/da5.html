@@ -1,0 +1,44 @@
+<!doctype html><html lang="fr"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>DA 5 · Éditorial</title>
+<style>
+:root{--bg:#fafaf7;--fg:#0e0e0e;--muted:#8a8a85;--line:#0e0e0e;--red:#d7263d}
+*{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--fg);font-family:"Helvetica Neue",Arial,sans-serif}
+.wrap{max-width:430px;margin:0 auto;padding:0 18px 120px}
+.mast{border-bottom:3px solid var(--fg);padding:18px 0 8px;display:flex;justify-content:space-between;align-items:flex-end}
+.logo{font-family:Didot,"Bodoni 72",Georgia,serif;font-size:46px;font-weight:700;letter-spacing:-.03em;line-height:.9}
+.issue{font-size:10px;font-weight:700;letter-spacing:.14em;text-transform:uppercase;text-align:right;line-height:1.5}
+.bar{display:flex;justify-content:space-between;font-size:10px;font-weight:700;letter-spacing:.14em;text-transform:uppercase;padding:6px 0;border-bottom:1px solid var(--fg)}
+.moment{margin:18px 0;display:flex;gap:14px;align-items:center;border-bottom:1px solid var(--fg);padding-bottom:16px}
+.moment .dot{width:12px;height:12px;border-radius:50%;background:var(--red);flex:none}
+.moment h3{margin:0;font-family:Didot,"Bodoni 72",Georgia,serif;font-style:italic;font-size:24px;font-weight:400;flex:1}
+.moment button{background:var(--fg);color:var(--bg);border:0;font-weight:700;font-size:11px;letter-spacing:.14em;padding:11px 14px;text-transform:uppercase}
+.post{margin:0 0 30px;border-bottom:1px solid var(--fg);padding-bottom:20px}
+.num{display:flex;justify-content:space-between;align-items:baseline;margin-bottom:10px}
+.num b{font-family:Didot,"Bodoni 72",Georgia,serif;font-size:56px;line-height:.8;font-weight:400}
+.num span{font-size:10px;font-weight:700;letter-spacing:.14em;text-transform:uppercase}
+.post img{width:100%;aspect-ratio:4/5;object-fit:cover;display:block;filter:grayscale(1) contrast(1.05)}
+.post img:hover{filter:none}
+.who{font-size:11px;font-weight:700;letter-spacing:.14em;text-transform:uppercase;margin-top:12px;display:flex;justify-content:space-between}
+.who em{font-style:normal;color:var(--red)}
+.cap{font-family:Didot,"Bodoni 72",Georgia,serif;font-size:26px;line-height:1.1;margin:8px 0 12px}
+.re{font-size:13px;font-weight:700}.re span{margin-right:14px}
+nav{position:fixed;left:0;right:0;bottom:0;background:var(--bg);border-top:3px solid var(--fg);display:flex;justify-content:space-around;align-items:center;padding:10px 0 18px}
+nav span{font-size:10px;font-weight:700;letter-spacing:.14em;text-transform:uppercase;color:var(--muted)}nav span.on{color:var(--fg)}
+.shutter{width:52px;height:52px;border-radius:50%;background:var(--fg);display:flex;align-items:center;justify-content:center}.shutter i{width:14px;height:14px;border-radius:50%;background:var(--red)}
+.spec{border:1px solid var(--fg);padding:18px}
+.spec b{font-size:10px;font-weight:700;letter-spacing:.14em;text-transform:uppercase}
+.sw{display:flex;gap:0;margin:12px 0}.sw i{width:44px;height:44px;border:1px solid var(--fg)}
+.icon{display:flex;gap:16px;align-items:center;font-size:10px;font-weight:700;letter-spacing:.14em;text-transform:uppercase;color:var(--muted)}
+</style></head><body><div class="wrap">
+<div class="mast"><div class="logo">BeRail</div><div class="issue">N° 315<br>Classe 209</div></div>
+<div class="bar"><span>Mercredi 11 novembre</span><span>2 BeRail</span></div>
+<div class="moment"><span class="dot"></span><h3>C'est l'heure, 1 min 42.</h3><button>Poster</button></div>
+<div id="feed"></div>
+<div class="spec"><b>DA 5 — Éditorial</b>
+<p style="font-family:Georgia,serif;font-size:18px;line-height:1.45">Le fil comme un magazine : papier blanc cassé, grands titres à empattements, filets noirs, photos numérotées en noir et blanc qui reprennent leurs couleurs au toucher. Un seul point rouge. Chic et sobre.</p>
+<div class="sw"><i style="background:#fafaf7"></i><i style="background:#0e0e0e"></i><i style="background:#d7263d"></i></div>
+<div class="icon"><svg width="96" height="96" viewBox="0 0 96 96"><rect width="96" height="96" rx="22" fill="#0e0e0e"/><rect x="18" y="31" width="60" height="40" rx="4" fill="none" stroke="#fafaf7" stroke-width="3"/><circle cx="48" cy="51" r="12" fill="none" stroke="#fafaf7" stroke-width="3"/><circle cx="68" cy="38" r="3.5" fill="#d7263d"/></svg><span>Icône : appareil fin + point rouge</span></div></div>
+</div><nav><span class="on">Fil</span><span>Archives</span><div class="shutter"><i></i></div><span>Profil</span><span>Inviter</span></nav>
+<script src="/da-common.js"></script><script>
+document.getElementById('feed').innerHTML=MOCK.posts.map((p,i)=>`<div class="post"><div class="num"><b>0${i+1}</b><span>${p.time}</span></div><img src="${p.img}">
+<div class="who"><span>Par ${p.name}</span>${p.late?'<em>En retard</em>':''}</div><p class="cap">« ${p.cap} »</p><div class="re">${p.r.map(x=>`<span>${x}</span>`).join('')}</div></div>`).join('')
+</script></body></html>

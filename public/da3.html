@@ -1,0 +1,49 @@
+<!doctype html><html lang="fr"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>DA 3 · Bonbon</title>
+<style>
+:root{--bg:#fff6e9;--fg:#2b1d3a;--muted:#8a7a99;--blue:#3d5afe;--pink:#ff6fb5;--yellow:#ffd23f;--green:#2ec4a6}
+*{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--fg);font-family:ui-rounded,"SF Pro Rounded","Nunito","Varela Round",system-ui,sans-serif}
+.wrap{max-width:430px;margin:0 auto;padding:0 16px 130px}
+header{display:flex;justify-content:space-between;align-items:center;padding:20px 0 12px}
+.logo{font-weight:900;font-size:30px;letter-spacing:-.03em}
+.logo span{display:inline-block;background:var(--yellow);border:3px solid var(--fg);border-radius:12px;padding:0 8px;transform:rotate(-3deg);margin-left:2px}
+.chip{font-weight:800;font-size:13px;background:#fff;border:3px solid var(--fg);border-radius:999px;padding:5px 12px;box-shadow:3px 3px 0 var(--fg)}
+.moment{background:var(--pink);border:3px solid var(--fg);border-radius:24px;box-shadow:5px 5px 0 var(--fg);padding:16px;display:flex;justify-content:space-between;align-items:center;margin:8px 0 6px}
+.moment h3{margin:0;font-size:21px;font-weight:900;color:#fff;-webkit-text-stroke:0}
+.moment small{font-weight:800;color:#fff;opacity:.9}
+.moment button{background:var(--yellow);border:3px solid var(--fg);border-radius:999px;font:inherit;font-weight:900;font-size:15px;padding:9px 16px;box-shadow:3px 3px 0 var(--fg)}
+h2{font-size:40px;font-weight:900;letter-spacing:-.03em;margin:22px 0 2px}
+.sub{margin:0 0 18px;color:var(--muted);font-weight:700}
+.post{background:#fff;border:3px solid var(--fg);border-radius:28px;box-shadow:6px 6px 0 var(--fg);overflow:hidden;margin:0 0 26px}
+.post:nth-child(2){box-shadow:6px 6px 0 var(--blue)}
+.head{display:flex;align-items:center;gap:10px;padding:12px 14px}
+.av{width:42px;height:42px;border-radius:50%;border:3px solid var(--fg);display:flex;align-items:center;justify-content:center;font-size:22px}
+.head b{font-size:17px;font-weight:900}.head small{display:block;color:var(--muted);font-weight:700}
+.late{margin-left:auto;background:var(--yellow);border:2.5px solid var(--fg);border-radius:999px;font-weight:900;font-size:12px;padding:3px 10px}
+.post img{width:100%;aspect-ratio:4/5;object-fit:cover;display:block;border-top:3px solid var(--fg);border-bottom:3px solid var(--fg)}
+.cap{margin:12px 16px 8px;font-size:17px;font-weight:800}
+.re{padding:0 14px 16px}.re span{display:inline-block;background:var(--bg);border:2.5px solid var(--fg);border-radius:999px;padding:5px 11px;margin-right:6px;font-weight:900}
+nav{position:fixed;left:12px;right:12px;bottom:14px;max-width:430px;margin:0 auto;background:#fff;border:3px solid var(--fg);border-radius:26px;box-shadow:5px 5px 0 var(--fg);display:flex;justify-content:space-around;align-items:center;padding:8px 0}
+nav span{font-weight:900;font-size:12px;color:var(--muted)}nav span.on{color:var(--blue)}
+.shutter{width:58px;height:58px;border-radius:50%;background:var(--yellow);border:3px solid var(--fg);display:flex;align-items:center;justify-content:center;font-size:26px}
+.spec{background:#fff;border:3px solid var(--fg);border-radius:24px;padding:18px;box-shadow:5px 5px 0 var(--green)}
+.spec b{font-weight:900;font-size:18px}
+.sw{display:flex;gap:8px;margin:12px 0}.sw i{width:40px;height:40px;border-radius:12px;border:3px solid var(--fg)}
+.icon{display:flex;gap:16px;align-items:center;font-weight:800;color:var(--muted)}
+</style></head><body><div class="wrap">
+<header><div class="logo">Be<span>Rail</span></div><span class="chip">🏫 209</span></header>
+<div class="moment"><div><small>⏰ 1 min 42 restante</small><h3>C'est l'heure du BeRail !</h3></div><button>📸 Go</button></div>
+<h2>Le fil</h2><p class="sub">Mercredi · 2 BeRail aujourd'hui</p>
+<div id="feed"></div>
+<div class="spec"><b>DA 3 — Bonbon</b>
+<p style="font-size:16px;line-height:1.5;font-weight:600">Couleurs franches en aplats (pas de dégradés), gros contours noirs, ombres décalées façon stickers, typo arrondie. Ludique et fun, très « appli de potes ».</p>
+<div class="sw"><i style="background:#fff6e9"></i><i style="background:#3d5afe"></i><i style="background:#ff6fb5"></i><i style="background:#ffd23f"></i><i style="background:#2ec4a6"></i></div>
+<div class="icon"><svg width="96" height="96" viewBox="0 0 96 96"><rect width="96" height="96" rx="22" fill="#ffd23f"/><rect x="16" y="30" width="64" height="44" rx="12" fill="#ff6fb5" stroke="#2b1d3a" stroke-width="4"/><rect x="34" y="21" width="24" height="12" rx="5" fill="#ff6fb5" stroke="#2b1d3a" stroke-width="4"/><circle cx="48" cy="52" r="14" fill="#fff" stroke="#2b1d3a" stroke-width="4"/><circle cx="48" cy="52" r="6" fill="#3d5afe"/><circle cx="69" cy="40" r="3" fill="#2b1d3a"/></svg>
+<span>Icône : appareil photo sticker, coloré</span></div></div>
+</div>
+<nav><span class="on">Fil</span><span>Souvenirs</span><div class="shutter">📸</div><span>Profil</span><span>Inviter</span></nav>
+<script src="/da-common.js"></script><script>
+const C=['#3d5afe','#2ec4a6','#ff6fb5'];const E=['🦊','🐸'];
+document.getElementById('feed').innerHTML=MOCK.posts.map((p,i)=>`<div class="post"><div class="head"><div class="av" style="background:${C[i]}">${E[i]}</div><div><b>${p.name}</b><small>${p.time}</small></div>${p.late?'<span class="late">en retard</span>':''}</div>
+<img src="${p.img}"><p class="cap">${p.cap}</p><div class="re">${p.r.map(x=>`<span>${x}</span>`).join('')}</div></div>`).join('')
+</script></body></html>

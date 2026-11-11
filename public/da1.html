@@ -1,0 +1,50 @@
+<!doctype html><html lang="fr"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>DA 1 · Pellicule</title>
+<style>
+:root{--paper:#f3ede1;--ink:#1d1a16;--muted:#7a7166;--stamp:#e8590c;--card:#fffdf8}
+*{box-sizing:border-box}body{margin:0;background:var(--paper);color:var(--ink);font-family:Georgia,"Times New Roman",serif}
+body::before{content:"";position:fixed;inset:0;pointer-events:none;opacity:.35;background-image:radial-gradient(rgba(0,0,0,.08) 1px,transparent 1px);background-size:3px 3px}
+.wrap{max-width:430px;margin:0 auto;padding:0 18px 120px;position:relative}
+.label{font:600 11px/1 ui-monospace,Menlo,monospace;letter-spacing:.18em;text-transform:uppercase;color:var(--muted)}
+header{display:flex;justify-content:space-between;align-items:center;padding:22px 0 14px;border-bottom:1px solid var(--ink)}
+.logo{font-size:30px;font-style:italic;letter-spacing:-.02em}
+.logo b{font-style:normal;color:var(--stamp)}
+.chip{font:600 12px ui-monospace,Menlo,monospace;border:1px solid var(--ink);padding:5px 9px;border-radius:2px}
+.moment{margin:18px 0;border:1.5px dashed var(--ink);padding:14px 16px;display:flex;justify-content:space-between;align-items:center}
+.moment h3{margin:0;font-size:20px;font-style:italic;font-weight:400}
+.moment button{background:var(--ink);color:var(--paper);border:0;font:600 12px ui-monospace,Menlo,monospace;letter-spacing:.12em;padding:10px 14px;text-transform:uppercase}
+h2{font-size:44px;font-weight:400;letter-spacing:-.03em;margin:22px 0 4px}
+.day{display:flex;align-items:center;gap:10px;margin:22px 0 16px}.day::after{content:"";flex:1;height:1px;background:var(--ink)}
+.pola{background:var(--card);padding:12px 12px 18px;box-shadow:0 1px 0 rgba(0,0,0,.08),0 14px 30px rgba(60,40,10,.14);margin:0 0 34px;transform:rotate(-1.2deg)}
+.pola:nth-child(even){transform:rotate(1deg)}
+.pola .ph{position:relative}.pola img{width:100%;aspect-ratio:4/5;object-fit:cover;display:block;filter:sepia(.18) contrast(1.05) saturate(.9)}
+.stamp{position:absolute;right:10px;bottom:8px;font:700 15px ui-monospace,Menlo,monospace;color:#ff8a3d;text-shadow:0 0 6px rgba(255,120,40,.6)}
+.who{display:flex;justify-content:space-between;align-items:baseline;margin-top:12px}
+.who b{font-size:22px;font-weight:400;font-style:italic}
+.cap{margin:4px 0 10px;font-size:16px}
+.re span{font:13px ui-monospace,Menlo,monospace;border:1px solid #d8cfbf;padding:4px 8px;margin-right:6px;border-radius:2px}
+.late{color:var(--stamp);font:700 11px ui-monospace,monospace;letter-spacing:.12em;text-transform:uppercase}
+.av{width:30px;height:30px;border-radius:50%;background:var(--ink);color:var(--paper);display:inline-flex;align-items:center;justify-content:center;font-size:14px;margin-right:8px;vertical-align:middle}
+nav{position:fixed;left:0;right:0;bottom:0;background:var(--paper);border-top:1px solid var(--ink);display:flex;justify-content:space-around;align-items:center;padding:10px 0 18px}
+nav span{font:600 11px ui-monospace,Menlo,monospace;letter-spacing:.12em;text-transform:uppercase;color:var(--muted)}nav span.on{color:var(--ink)}
+.shutter{width:56px;height:56px;border-radius:50%;border:2px solid var(--ink);display:flex;align-items:center;justify-content:center}.shutter i{width:42px;height:42px;border-radius:50%;background:var(--stamp)}
+.spec{margin-top:10px;padding:18px;border:1px solid var(--ink);background:var(--card)}
+.sw{display:flex;gap:8px;margin:10px 0}.sw i{width:38px;height:38px;border:1px solid var(--ink)}
+.icon{display:flex;gap:16px;align-items:center}
+</style></head><body><div class="wrap">
+<header><div class="logo">Be<b>Rail</b></div><span class="chip">CLASSE 209</span></header>
+<div class="moment"><div><div class="label">Aujourd'hui · 13:04</div><h3>C'est l'heure du BeRail.</h3></div><button>Poster</button></div>
+<div class="label">Le fil</div><h2>Mercredi</h2>
+<div class="day"><span class="label">11 · 11 · 26</span></div>
+<div id="feed"></div>
+<div class="spec"><div class="label">DA 1 — Pellicule</div>
+<p style="font-size:17px;line-height:1.5">Papier crème, typo à empattements, photos en polaroïd légèrement penchées, date imprimée orange comme un vieil appareil jetable. Chaleureux, nostalgique, calme.</p>
+<div class="sw"><i style="background:#f3ede1"></i><i style="background:#1d1a16"></i><i style="background:#e8590c"></i><i style="background:#fffdf8"></i></div>
+<div class="icon"><svg width="96" height="96" viewBox="0 0 96 96"><rect width="96" height="96" rx="22" fill="#f3ede1"/><rect x="16" y="30" width="64" height="44" rx="6" fill="none" stroke="#1d1a16" stroke-width="4"/><path d="M34 30l5-8h18l5 8" fill="none" stroke="#1d1a16" stroke-width="4" stroke-linejoin="round"/><circle cx="48" cy="52" r="13" fill="none" stroke="#1d1a16" stroke-width="4"/><circle cx="48" cy="52" r="5" fill="#e8590c"/><circle cx="70" cy="39" r="2.5" fill="#e8590c"/></svg>
+<span class="label">Icône : appareil photo vintage au trait</span></div></div>
+</div>
+<nav><span class="on">Fil</span><span>Souvenirs</span><div class="shutter"><i></i></div><span>Profil</span><span>Inviter</span></nav>
+<script src="/da-common.js"></script><script>
+document.getElementById('feed').innerHTML=MOCK.posts.map(p=>`<div class="pola"><div class="ph"><img src="${p.img}"><span class="stamp">'26 11 11 ${p.time}</span></div>
+<div class="who"><b><span class="av">${p.name[0]}</span>${p.name}</b>${p.late?'<span class="late">En retard</span>':`<span class="label">${p.time}</span>`}</div><p class="cap">${p.cap}</p><div class="re">${p.r.map(x=>`<span>${x}</span>`).join('')}</div></div>`).join('')
+</script></body></html>

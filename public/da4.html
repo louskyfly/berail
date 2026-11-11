@@ -1,0 +1,45 @@
+<!doctype html><html lang="fr"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>DA 4 · Ardoise</title>
+<style>
+:root{--bg:#121417;--fg:#f4f5f7;--muted:#8b9099;--line:#23272d;--card:#1a1d21}
+*{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--fg);font-family:"Helvetica Neue",Arial,sans-serif}
+.wrap{max-width:430px;margin:0 auto;padding:0 0 120px}
+header{display:flex;justify-content:space-between;align-items:center;padding:20px 16px}
+.logo{font-weight:900;font-size:26px;letter-spacing:-.06em;text-transform:uppercase}
+.chip{font-weight:800;font-size:11px;letter-spacing:.1em;border:1px solid #3a3f47;padding:6px 9px;border-radius:999px}
+.moment{margin:0 16px;background:var(--fg);color:var(--bg);padding:16px;border-radius:14px;display:flex;justify-content:space-between;align-items:center}
+.moment h3{margin:0;font-size:22px;font-weight:900;text-transform:uppercase;letter-spacing:-.04em;line-height:.95}
+.moment small{font-weight:700;font-size:12px;color:#5c626b}
+.moment button{background:var(--bg);color:var(--fg);border:0;border-radius:999px;font-weight:900;font-size:13px;padding:12px 16px;text-transform:uppercase}
+h2{font-size:68px;line-height:.85;font-weight:900;text-transform:uppercase;letter-spacing:-.07em;margin:26px 16px 6px}
+.sub{margin:0 16px 22px;color:var(--muted);font-size:13px;font-weight:700;text-transform:uppercase;letter-spacing:.08em}
+.post{position:relative;margin:0 12px 26px;border-radius:20px;overflow:hidden;background:var(--card)}
+.glow{position:absolute;inset:-40px;background-size:cover;background-position:center;filter:blur(40px) saturate(1.6);opacity:.55;z-index:0}
+.in{position:relative;z-index:1}
+.ph img{width:100%;aspect-ratio:4/5;object-fit:cover;display:block;border-radius:20px 20px 0 0}
+.meta{padding:14px 16px 16px;background:linear-gradient(to bottom,rgba(18,20,23,.55),rgba(18,20,23,.85))}
+.who{display:flex;align-items:center;gap:10px}.who b{font-weight:900;text-transform:uppercase;font-size:17px;letter-spacing:-.02em}.who span{color:#c3c7cd;font-size:12px;font-weight:700}
+.av{width:34px;height:34px;border-radius:50%;background:#fff;color:#111;display:flex;align-items:center;justify-content:center;font-weight:900}
+.late{margin-left:auto;font-size:10px;font-weight:900;letter-spacing:.1em;border:1px solid #fff;padding:4px 8px;border-radius:999px}
+.cap{margin:10px 0;font-size:16px;font-weight:700}
+.re span{display:inline-block;background:rgba(255,255,255,.12);padding:6px 11px;margin-right:6px;border-radius:999px;font-weight:800;font-size:14px}
+nav{position:fixed;left:0;right:0;bottom:0;background:rgba(18,20,23,.92);border-top:1px solid var(--line);display:flex;justify-content:space-around;align-items:center;padding:10px 0 18px}
+nav span{font-weight:900;font-size:11px;letter-spacing:.1em;text-transform:uppercase;color:var(--muted)}nav span.on{color:#fff}
+.shutter{width:58px;height:58px;border-radius:50%;border:3px solid #fff;display:flex;align-items:center;justify-content:center}.shutter i{width:44px;height:44px;border-radius:50%;background:#fff}
+.spec{margin:10px 16px 0;padding:18px;border:1px solid var(--line);border-radius:16px}
+.spec b{font-weight:900;text-transform:uppercase;letter-spacing:.06em;font-size:12px}
+.sw{display:flex;gap:8px;margin:12px 0}.sw i{width:40px;height:40px;border-radius:10px;border:1px solid #333}
+.icon{display:flex;gap:16px;align-items:center;color:var(--muted);font-size:12px;font-weight:700;text-transform:uppercase}
+</style></head><body><div class="wrap">
+<header><div class="logo">BeRail</div><span class="chip">209</span></header>
+<div class="moment"><div><small>13:04 · 1:42 restant</small><h3>Poste<br>maintenant</h3></div><button>Go →</button></div>
+<h2>Le<br>fil.</h2><p class="sub">Mercredi 11 novembre · 2 BeRail</p>
+<div id="feed"></div>
+<div class="spec"><b>DA 4 — Ardoise</b>
+<p style="font-size:16px;line-height:1.5;color:#c3c7cd">La structure de la DA Nuit (capitales grasses, gros titres), mais sans couleur d'accent : gris ardoise, blanc, et c'est chaque photo qui colore sa carte avec un halo flou. Les couleurs viennent de vos photos.</p>
+<div class="sw"><i style="background:#121417"></i><i style="background:#1a1d21"></i><i style="background:#f4f5f7"></i><i style="background:#8b9099"></i></div>
+<div class="icon"><svg width="96" height="96" viewBox="0 0 96 96"><rect width="96" height="96" rx="22" fill="#121417"/><rect x="17" y="30" width="62" height="42" rx="9" fill="none" stroke="#fff" stroke-width="5"/><rect x="36" y="22" width="20" height="9" rx="3" fill="#fff"/><circle cx="48" cy="51" r="12" fill="none" stroke="#fff" stroke-width="5"/></svg><span>Icône : appareil photo blanc au trait épais</span></div></div>
+</div><nav><span class="on">Fil</span><span>Archive</span><div class="shutter"><i></i></div><span>Moi</span><span>Inviter</span></nav>
+<script src="/da-common.js"></script><script>
+document.getElementById('feed').innerHTML=MOCK.posts.map(p=>`<div class="post"><div class="glow" style="background-image:url(${p.img})"></div><div class="in"><div class="ph"><img src="${p.img}"></div>
+<div class="meta"><div class="who"><div class="av">${p.name[0]}</div><div><b>${p.name}</b><br><span>${p.time}</span></div>${p.late?'<span class="late">EN RETARD</span>':''}</div><p class="cap">${p.cap}</p><div class="re">${p.r.map(x=>`<span>${x}</span>`).join('')}</div></div></div></div>`).join('')
+</script></body></html>
