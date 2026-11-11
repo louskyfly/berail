@@ -16,6 +16,12 @@ function avatarStyle(n) {
   const h = hueOf(n);
   return `style="background:linear-gradient(140deg,hsl(${h} 85% 64%),hsl(${(h + 55) % 360} 78% 46%))"`;
 }
+const BLANK = 'data:image/gif;base64,R0lGODlhAQABAAAAACH5BAEKAAEALAAAAAABAAEAAAICTAEAOw==';
+const ICON = {
+  dl: '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3v11m0 0l-4.5-4.5M12 14l4.5-4.5M5 17v2a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2v-2" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg>',
+  share: '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 15V3m0 0L7.5 7.5M12 3l4.5 4.5M6 11H5a2 2 0 0 0-2 2v6a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-6a2 2 0 0 0-2-2h-1" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg>'
+};
+const imgTag = (p, alt, cls = '') => `<img class="ph ${cls}" src="${p.photo || BLANK}" data-pid="${p.id}" alt="${esc(alt)}">`;
 const EMOJIS = ['😂', '😍', '🔥', '😮', '👏', '💀'];
 
 const S = {
@@ -28,6 +34,7 @@ const S = {
   view: 'feed',
   lastPostCount: 0,
   purgeHour: 23,
+  retentionDays: 7,
   sharedMode: false
 };
 
@@ -129,6 +136,7 @@ async function refresh(rerender = false) {
   S.moment = r.klass ? r.klass.moment : null;
   S.lastPostCount = S.posts.length;
   S.purgeHour = r.purgeHour != null ? r.purgeHour : S.purgeHour;
+  S.retentionDays = r.retentionDays || S.retentionDays;
   if (rerender) { renderFeed(); }
   renderBanner();
 }
@@ -171,6 +179,25 @@ function renderBanner() {
 }
 
 /* ---------- feed ---------- */
+const todayKey = () => window.BerailDayKey(new Date());
+function dayLabel(iso) {
+  const k = window.BerailDayKey(new Date(iso));
+  const t = todayKey();
+  const y = window.BerailDayKey(new Date(Date.now() - 86400000));
+  if (k === t) return "Aujourd'hui";
+  if (k === y) return 'Hier';
+  const s = new Date(iso).toLocaleDateString('fr-FR', { weekday: 'long', day: 'numeric', month: 'long', timeZone: 'Europe/Paris' });
+  return s.charAt(0).toUpperCase() + s.slice(1);
+}
+function hhmm(iso) {
+  return new Date(iso).toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit', timeZone: 'Europe/Paris' });
+}
+function daysLeft(iso) {
+  const a = Date.parse(window.BerailDayKey(new Date(iso)) + 'T00:00:00Z');
+  const b = Date.parse(todayKey() + 'T00:00:00Z');
+  return Math.max(0, S.retentionDays - Math.round((b - a) / 86400000));
+}
+
 function postCard(p) {
   const reactBtns = EMOJIS.map((e) => {
     const n = p.reactions[e] || 0;
@@ -178,58 +205,114 @@ function postCard(p) {
   }).join('');
   const comments = (p.comments || []).slice(-3).map((c) =>
     `<div class="comment"><b>${esc(c.name)}</b> ${esc(c.text)}</div>`).join('');
-  const more = p.commentCount > 3 ? `<div class="comment" style="color:#7d7d7d">+ ${p.commentCount - 3} autre${p.commentCount - 3 > 1 ? 's' : ''} commentaire${p.commentCount - 3 > 1 ? 's' : ''}</div>` : '';
+  const more = p.commentCount > 3 ? `<div class="comment more">+ ${p.commentCount - 3} autre${p.commentCount - 3 > 1 ? 's' : ''} commentaire${p.commentCount - 3 > 1 ? 's' : ''}</div>` : '';
+  const left = daysLeft(p.createdAt);
 
   return `<article class="post ${p.mine ? 'mine' : ''}" data-post="${p.id}">
-    <header class="post-head">
-      <div class="avatar" ${avatarStyle(p.userName)}>${initials(p.userName)}</div>
-      <div class="post-who">
-        <b>${esc(p.userName)}${p.mine ? ' <span style="color:#8a8a8a;font-weight:600">· toi</span>' : ''}</b>
-        <span>${ago(p.createdAt)}${p.late ? '<span class="badge-late">⚠️ En retard</span>' : ''}</span>
-      </div>
-      <div class="spacer"></div>
-      <button class="mini-btn" data-act="share" data-post="${p.id}">Code</button>
-    </header>
     <div class="post-media">
-      <img src="${p.photo}" alt="BeRail de ${esc(p.userName)}" loading="lazy">
-      ${p.mine ? '<span class="mine-tag">Ton BeRail</span>' : ''}
+      ${imgTag(p, 'BeRail de ' + p.userName)}
+      <div class="media-top">
+        <div class="avatar" ${avatarStyle(p.userName)}>${initials(p.userName)}</div>
+        <div class="post-who">
+          <b>${esc(p.userName)}${p.mine ? ' <i>· toi</i>' : ''}</b>
+          <span>${hhmm(p.createdAt)} · ${left <= 1 ? "s'efface ce soir" : `encore ${left} j`}${p.late ? '<span class="badge-late">En retard</span>' : ''}</span>
+        </div>
+      </div>
+      <div class="media-actions">
+        <button class="glass-btn" data-act="download" data-post="${p.id}" aria-label="Télécharger">${ICON.dl}</button>
+        <button class="glass-btn" data-act="share" data-post="${p.id}" aria-label="Partager">${ICON.share}</button>
+      </div>
     </div>
     ${p.caption ? `<p class="caption">${esc(p.caption)}</p>` : ''}
     <div class="reactions">${reactBtns}</div>
-    <div class="comments">${comments}${more}
-      <form class="comment-form" data-act="comment" data-post="${p.id}">
-        <input maxlength="160" placeholder="Ajouter un commentaire…" autocomplete="off">
-        <button type="submit" aria-label="Envoyer">↑</button>
-      </form>
-    </div>
+    <div class="comments">${comments}${more}</div>
+    <form class="comment-form" data-act="comment" data-post="${p.id}">
+      <input maxlength="160" placeholder="Ajouter un commentaire…" autocomplete="off">
+      <button type="submit" aria-label="Envoyer">↑</button>
+    </form>
   </article>`;
+}
+
+function storiesRow() {
+  const today = S.posts.filter((p) => window.BerailDayKey(new Date(p.createdAt)) === todayKey());
+  const seen = new Set();
+  const people = [];
+  for (const p of today) if (!seen.has(p.userId)) { seen.add(p.userId); people.push(p); }
+  const meDone = today.some((p) => p.mine);
+  const me = `<button class="story ${meDone ? 'done' : 'todo'}" ${meDone ? `data-jump="${today.find((p) => p.mine).id}"` : 'id="storyMe"'}>
+      <span class="story-ring"><span class="avatar" ${avatarStyle(S.user.name)}>${meDone ? initials(S.user.name) : '+'}</span></span>
+      <span class="story-name">Toi</span></button>`;
+  const others = people.filter((p) => !p.mine).map((p) => `<button class="story done" data-jump="${p.id}">
+      <span class="story-ring"><span class="avatar" ${avatarStyle(p.userName)}>${initials(p.userName)}</span></span>
+      <span class="story-name">${esc(p.userName)}</span></button>`).join('');
+  return `<div class="stories">${me}${others}</div>`;
 }
 
 function renderFeed() {
   const el = $('#view-feed');
-  if (!S.posts.length) {
-    el.innerHTML = `
-      <div class="view-head"><h2>Fil de la classe</h2><p>La classe #${esc(S.klass.code)} est prête</p></div>
+  const week = S.posts.length;
+  const head = `<div class="view-head feed-head">
+      <div><p class="eyebrow">Classe # ${esc(S.klass.code)}</p><h2>Le fil</h2>
+      <p>${week ? `${week} BeRail${week > 1 ? 's' : ''} cette semaine` : 'Rien cette semaine'} · gardés ${S.retentionDays} jours</p></div>
+    </div>`;
+  if (!week) {
+    el.innerHTML = head + `
       <div class="empty">
-        <div style="font-size:40px;line-height:1;margin-bottom:12px">⚡</div>
+        <div class="empty-icon">⚡</div>
         <b>Aucun BeRail pour l'instant.</b><br>
-        Lance le premier : photo arrière, photo avant, et c'est parti.<br><br>
-        <span style="color:rgba(255,255,255,.45);font-size:12px">Le fil repart à zéro chaque jour.</span>
-        <button class="btn btn-primary" style="display:block;margin:18px auto 0;width:100%;max-width:280px" id="emptyTake">Prendre le premier</button>
+        Lance le premier : photo arrière, photo avant, et c'est parti.
+        <button class="btn btn-primary" id="emptyTake">Prendre le premier</button>
       </div>`;
     const b = $('#emptyTake');
     if (b) b.onclick = openCapture;
     return;
   }
-  const others = S.posts.filter((p) => !p.mine);
-  const mine = S.posts.find((p) => p.mine);
-  el.innerHTML = `
-    <div class="view-head" style="display:flex;align-items:flex-end;justify-content:space-between">
-      <div><h2>Fil de la classe</h2><p>${S.posts.length} BeRail${S.posts.length > 1 ? 's' : ''} dans la classe</p></div>
-      <span class="chip" style="font-size:11px"># ${esc(S.klass.code)}</span>
-    </div>
-    ${mine ? postCard(mine) : ''}
-    ${others.map(postCard).join('')}`;
+  // aujourd'hui : mon BeRail en premier ; ensuite par jour, du plus récent au plus ancien
+  const sorted = [...S.posts].sort((a, b) => b.createdAt.localeCompare(a.createdAt));
+  const groups = [];
+  for (const p of sorted) {
+    const k = window.BerailDayKey(new Date(p.createdAt));
+    let g = groups[groups.length - 1];
+    if (!g || g.key !== k) groups.push(g = { key: k, label: dayLabel(p.createdAt), posts: [] });
+    g.posts.push(p);
+  }
+  for (const g of groups) g.posts.sort((a, b) => (b.mine - a.mine) || b.createdAt.localeCompare(a.createdAt));
+  el.innerHTML = head + storiesRow() + groups.map((g) => `
+    <section class="day">
+      <h3 class="day-label"><span>${esc(g.label)}</span><small>${g.posts.length} BeRail${g.posts.length > 1 ? 's' : ''}</small></h3>
+      ${g.posts.map(postCard).join('')}
+    </section>`).join('');
+  const sm = $('#storyMe'); if (sm) sm.onclick = openCapture;
+  $$('#view-feed [data-jump]').forEach((b) => b.onclick = () => {
+    const t = $(`#view-feed article[data-post="${b.dataset.jump}"]`);
+    if (t) t.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  });
+}
+
+/* ---------- téléchargement ---------- */
+async function downloadPost(p) {
+  try {
+    toast('Préparation…');
+    const dataUrl = p.photo || await window.BerailPhoto(p.id);
+    if (!dataUrl) throw new Error('no_photo');
+    const blob = await (await fetch(dataUrl)).blob();
+    const d = new Date(p.createdAt).toLocaleDateString('fr-FR', { timeZone: 'Europe/Paris' }).replace(/\//g, '-');
+    const name = `BeRail-${(p.userName || 'photo').normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/[^\w-]+/g, '')}-${d}.jpg`;
+    const file = new File([blob], name, { type: blob.type || 'image/jpeg' });
+    if (navigator.canShare && navigator.canShare({ files: [file] })) {
+      // iPad / iPhone : la feuille de partage propose « Enregistrer l'image »
+      await navigator.share({ files: [file], title: 'BeRail de ' + p.userName });
+      return;
+    }
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url; a.download = name; document.body.appendChild(a); a.click(); a.remove();
+    setTimeout(() => URL.revokeObjectURL(url), 4000);
+    toast('Photo téléchargée');
+  } catch (e) {
+    if (e && e.name === 'AbortError') return;
+    toast('Téléchargement impossible');
+  }
 }
 
 /* ---------- interactions feed ---------- */
@@ -253,6 +336,10 @@ document.addEventListener('click', async (e) => {
   if (act === 'share') {
     const p = S.posts.find((x) => x.id === postId);
     if (p) shareModal(p);
+  }
+  if (act === 'download') {
+    const p = S.posts.find((x) => x.id === postId) || S.sharedPost;
+    if (p) downloadPost(p);
   }
 });
 
@@ -285,10 +372,12 @@ function shareModal(p) {
     <div class="share-code">${esc(p.shareCode)}</div>
     <div class="row" style="flex-direction:column">
       <button class="btn btn-primary" id="copyShare">Copier le code</button>
+      <button class="btn btn-ghost" id="dlShare">${ICON.dl} Télécharger la photo</button>
       ${navigator.share ? '<button class="btn btn-ghost" id="nativeShare">Partager le lien…</button>' : '<button class="btn btn-ghost" id="copyLink">Copier le lien</button>'}
     </div>
   </div>`);
   $('#copyShare').onclick = () => copy(p.shareCode, 'Code copié');
+  $('#dlShare').onclick = () => downloadPost(p);
   const ns = $('#nativeShare');
   if (ns) ns.onclick = () => navigator.share({ title: 'BeRail de ' + p.userName, text: p.caption || 'Regarde mon BeRail', url: link }).catch(() => {});
   const cl = $('#copyLink');
@@ -349,31 +438,32 @@ function renderMemories() {
   const mine = S.posts.filter((p) => p.mine);
   const el = $('#view-memories');
   el.innerHTML = `
-    <div class="view-head"><h2>Mémoires</h2><p>${mine.length} BeRail${mine.length > 1 ? 's' : ''} posté${mine.length > 1 ? 's' : ''}</p></div>
+    <div class="view-head"><p class="eyebrow">Les ${S.retentionDays} derniers jours</p><h2>Mémoires</h2><p>${mine.length} BeRail${mine.length > 1 ? 's' : ''} posté${mine.length > 1 ? 's' : ''} · télécharge ceux que tu veux garder</p></div>
     ${mine.length ? `<div class="grid">${mine.map((p) => `
       <figure data-open="${p.id}">
-        <img src="${p.photo}" alt="BeRail" loading="lazy">
+        ${imgTag(p, 'BeRail')}
+        <span class="g-date">${esc(dayLabel(p.createdAt))}</span>
         ${p.late ? '<span class="g-late">En retard</span>' : ''}
       </figure>`).join('')}</div>`
-      : `<div class="empty">Tes BeRail de la classe apparaîtront ici.<br><br><span style="color:#777">Un seul par moment, garde-les précieusement.</span></div>`}`;
+      : `<div class="empty">Tes BeRail de la semaine apparaîtront ici.<br><br><span style="color:rgba(255,255,255,.45)">Ils restent ${S.retentionDays} jours : télécharge ceux que tu veux garder.</span></div>`}`;
 
   $$('#view-memories figure').forEach((f) => {
     f.onclick = () => {
       const p = S.posts.find((x) => x.id === f.dataset.open);
       if (!p) return;
       openModal(`<div class="sheet" style="padding:0;overflow:hidden;max-width:520px">
-        <img src="${p.photo}" style="width:100%;display:block" alt="BeRail">
+        ${imgTag(p, 'BeRail', 'modal-img')}
         <div style="padding:16px">
           <h3>${esc(p.userName)} · ${new Date(p.createdAt).toLocaleString('fr-FR', { day: 'numeric', month: 'long', hour: '2-digit', minute: '2-digit' })}</h3>
           <p style="margin:6px 0 14px">${p.caption ? esc(p.caption) : '<span style="color:#777">Sans légende</span>'}</p>
           <div class="row">
-            <button class="btn btn-primary" id="memShare">Code de partage</button>
-            <button class="btn btn-ghost" data-close>Fermer</button>
+            <button class="btn btn-primary" id="memDl">${ICON.dl} Télécharger</button>
+            <button class="btn btn-ghost" id="memShare">Code</button>
           </div>
         </div>
       </div>`);
       $('#memShare').onclick = () => shareModal(p);
-      const c = $('#modal [data-close]'); if (c) c.onclick = closeModal;
+      $('#memDl').onclick = () => downloadPost(p);
     };
   });
 }
@@ -391,7 +481,7 @@ function renderProfile() {
     <div class="stat-row">
       <div class="stat"><b>${mine.length}</b><span>BeRail postés</span></div>
       <div class="stat"><b>${reactions}</b><span>réactions reçues</span></div>
-      <div class="stat"><b>${S.posts.length}</b><span>dans la classe</span></div>
+      <div class="stat"><b>${S.posts.length}</b><span>cette semaine</span></div>
     </div>
     <div class="panel">
       <h3>Code de la classe</h3>
@@ -406,7 +496,7 @@ function renderProfile() {
     </div>` : ''}
     <div class="panel">
       <h3>Espace & nettoyage</h3>
-      <p>Les photos sont effacées automatiquement chaque soir à ${S.purgeHour}h pour libérer la place. Le fil repart à zéro chaque jour, rien ne s'accumule.</p>
+      <p>Chaque BeRail reste ${S.retentionDays} jours, puis il est effacé automatiquement pour libérer la place. Télécharge ceux que tu veux garder.</p>
       ${isOwner ? '<button class="btn btn-ghost" style="width:100%;color:#ff8a80;border-color:#3d1414" id="pPurge">Vider les photos maintenant</button>' : ''}
     </div>
     <div class="panel">
@@ -433,7 +523,7 @@ function renderProfile() {
 function purgeModal() {
   openModal(`<div class="sheet">
     <h3>Vider les photos ?</h3>
-    <p>Tous les BeRail et toutes les photos du jour seront supprimés tout de suite. Les comptes et la classe restent en place.</p>
+    <p>Tous les BeRail de la semaine et leurs photos seront supprimés tout de suite. Les comptes et la classe restent en place.</p>
     <div class="row" style="flex-direction:column">
       <button class="btn btn-primary" id="purgeYes">Oui, tout supprimer</button>
       <button class="btn btn-ghost" data-close>Annuler</button>
@@ -528,7 +618,7 @@ function finishCapture() {
 }
 
 function compose(back, front) {
-  const W = 1080, H = 1440;
+  const W = 960, H = 1280;
   const c = document.createElement('canvas');
   c.width = W; c.height = H;
   const x = c.getContext('2d');
@@ -618,10 +708,11 @@ async function showShared(code) {
   try {
     const r = await API('/api/p/' + encodeURIComponent(code));
     const p = r.post;
+    S.sharedPost = p;
     el.innerHTML = `
       <div class="shared-head"><span class="brand"><span class="brand-dot"></span>BeRail</span><span class="chip">Code ${esc(code)}</span></div>
       <div class="shared-card">
-        <img src="${p.photo}" alt="BeRail de ${esc(p.userName)}">
+        ${imgTag(p, 'BeRail de ' + p.userName)}
         <div class="shared-body">
           <h3>${esc(p.userName)}${p.late ? '<span class="badge-late">⚠️ En retard</span>' : ''}</h3>
           <p>${p.caption ? esc(p.caption) : '<span style="color:#777">Sans légende</span>'} · ${ago(p.createdAt)}</p>
@@ -629,7 +720,8 @@ async function showShared(code) {
         </div>
       </div>
       <div class="shared-cta">
-        <button class="btn btn-primary" id="sharedJoin">Rejoindre la classe</button>
+        <button class="btn btn-primary" data-act="download" data-post="${p.id}">${ICON.dl} Télécharger la photo</button>
+        <button class="btn btn-ghost" id="sharedJoin">Rejoindre la classe</button>
         <button class="btn btn-ghost" id="sharedCopy">Copier le lien</button>
       </div>`;
     $('#sharedJoin').onclick = () => { S.sharedMode = false; location.href = '/'; };
@@ -696,7 +788,7 @@ document.addEventListener('click', (e) => {
   if (tab) setView(tab.dataset.view);
 });
 $('#shareTab').addEventListener('click', () => {
-  const mine = S.posts.find((p) => p.mine);
+  const mine = S.posts.find((p) => p.id === S.myPostId) || S.posts.find((p) => p.mine);
   if (mine) shareModal(mine);
   else classModal();
 });

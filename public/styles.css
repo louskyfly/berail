@@ -379,3 +379,82 @@ button{font:inherit;color:inherit;background:none;border:0;padding:0;cursor:poin
 @media (prefers-reduced-motion:reduce){
   body::before{animation:none}
 }
+
+/* ═════════ v2 : fil sur 7 jours, téléchargement, finitions ═════════ */
+.eyebrow{margin:0 0 4px !important;font-size:11px !important;font-weight:800;letter-spacing:.14em;text-transform:uppercase;
+  background:linear-gradient(90deg,#ffe45c,#ff8fb1);-webkit-background-clip:text;background-clip:text;color:transparent !important}
+.view-head h2{font-size:34px;letter-spacing:-.045em;line-height:1.02}
+.feed-head{padding-bottom:10px}
+
+/* Bandeau « aujourd'hui » façon stories */
+.stories{display:flex;gap:14px;overflow-x:auto;padding:6px 4px 16px;margin:0 -4px 4px;scrollbar-width:none;-webkit-overflow-scrolling:touch}
+.stories::-webkit-scrollbar{display:none}
+.story{display:flex;flex-direction:column;align-items:center;gap:6px;flex:none;width:62px}
+.story-ring{width:60px;height:60px;border-radius:50%;padding:2.5px;display:flex;align-items:center;justify-content:center;
+  background:conic-gradient(from 200deg,#ffe45c,#ff6b9a,#8d7bff,#33e0d0,#ffe45c);box-shadow:0 8px 22px rgba(0,0,0,.4)}
+.story-ring .avatar{width:100%;height:100%;font-size:20px;border:3px solid #0b0c16;box-shadow:none}
+.story.todo .story-ring{background:rgba(255,255,255,.18);border:1.5px dashed rgba(255,255,255,.55);padding:3px}
+.story.todo .avatar{font-size:26px;font-weight:600}
+.story-name{font-size:11px;font-weight:650;color:rgba(255,255,255,.8);max-width:62px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+
+/* Séparateurs de jours */
+.day{margin-bottom:6px}
+.day-label{position:relative;display:flex;align-items:center;justify-content:space-between;
+  margin:6px 0 12px;padding:8px 14px;border-radius:999px;font-size:14px;font-weight:800;letter-spacing:-.01em;
+  background:rgba(14,16,26,.6);border:1px solid rgba(255,255,255,.14);
+  box-shadow:0 10px 26px rgba(0,0,0,.35),inset 0 1px 0 rgba(255,255,255,.2);
+  backdrop-filter:var(--blur);-webkit-backdrop-filter:var(--blur)}
+.day-label small{font-size:11px;font-weight:650;color:var(--muted)}
+
+/* Carte : photo plein cadre, infos posées dessus */
+.post{border-radius:30px;margin-bottom:18px}
+.post-media{margin:0;border-radius:30px 30px 0 0;overflow:hidden}
+.post-media img.ph{aspect-ratio:3/4;max-height:68vh;width:100%;object-fit:cover;display:block;
+  background:linear-gradient(110deg,rgba(255,255,255,.05) 30%,rgba(255,255,255,.13) 50%,rgba(255,255,255,.05) 70%) 0 0/250% 100%;
+  animation:shimmer 1.4s linear infinite}
+.post-media img.ph.ready{animation:none;background:none}
+@keyframes shimmer{to{background-position:-250% 0}}
+.post-media::before{content:"";position:absolute;inset:0 0 auto 0;height:110px;z-index:1;pointer-events:none;
+  background:linear-gradient(to bottom,rgba(0,0,0,.55),transparent)}
+.post-media::after{content:"";position:absolute;inset:auto 0 0 0;height:90px;z-index:1;pointer-events:none;
+  background:linear-gradient(to top,rgba(0,0,0,.62),transparent)}
+.media-top{position:absolute;bottom:12px;left:12px;right:12px;z-index:2;display:flex;align-items:center;gap:10px}
+.media-top .post-who b{font-size:15px;text-shadow:0 1px 6px rgba(0,0,0,.5)}
+.media-top .post-who b i{font-style:normal;font-weight:600;color:rgba(255,255,255,.7)}
+.media-top .post-who span{color:rgba(255,255,255,.82);text-shadow:0 1px 4px rgba(0,0,0,.5)}
+.media-actions{position:absolute;top:12px;right:12px;z-index:2;display:flex;gap:8px}
+.glass-btn{width:42px;height:42px;border-radius:50%;display:flex;align-items:center;justify-content:center;color:#fff;
+  background:rgba(255,255,255,.16);border:1px solid rgba(255,255,255,.3);
+  box-shadow:0 8px 20px rgba(0,0,0,.35),inset 0 1px 0 rgba(255,255,255,.45);
+  backdrop-filter:blur(14px) saturate(170%);-webkit-backdrop-filter:blur(14px) saturate(170%)}
+.glass-btn:active{transform:scale(.92);background:rgba(255,255,255,.26)}
+.glass-btn svg{width:20px;height:20px}
+.btn svg{width:18px;height:18px;vertical-align:-3px;margin-right:4px}
+.expire{position:absolute;bottom:12px;right:12px;z-index:2;font-size:11px;font-weight:700;color:rgba(255,255,255,.9);
+  padding:5px 10px;border-radius:999px;background:rgba(0,0,0,.35);border:1px solid rgba(255,255,255,.18);
+  backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px)}
+.post.mine .post-media{box-shadow:inset 0 0 0 2px rgba(255,214,10,.55)}
+.caption{padding:14px 16px 0;font-size:15px}
+.reactions{padding:12px 13px 2px}
+.react{transition:transform .12s}
+.react:active{transform:scale(.9)}
+.comments:empty{display:none}
+.comment.more{color:rgba(255,255,255,.5)}
+.comment-form{padding:6px 13px 14px}
+
+/* Mémoires */
+.grid{grid-template-columns:repeat(3,1fr);gap:10px}
+.grid figure{border-radius:22px;cursor:pointer;transition:transform .12s}
+.grid figure:active{transform:scale(.97)}
+.grid figure::after{content:"";position:absolute;inset:auto 0 0 0;height:50%;background:linear-gradient(to top,rgba(0,0,0,.55),transparent);pointer-events:none}
+.g-date{position:absolute;left:9px;bottom:8px;z-index:1;font-size:11px;font-weight:750;color:#fff;text-shadow:0 1px 4px rgba(0,0,0,.6)}
+.modal-img{width:100%;display:block;aspect-ratio:3/4;object-fit:cover}
+
+/* Vide */
+.empty-icon{font-size:44px;line-height:1;margin-bottom:12px;filter:drop-shadow(0 0 18px rgba(255,214,10,.6))}
+.empty .btn{display:block;margin:20px auto 0;width:100%;max-width:280px}
+
+@media (min-width:700px){
+  .grid{grid-template-columns:repeat(4,1fr)}
+  .post-media img.ph{aspect-ratio:4/5}
+}

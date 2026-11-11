@@ -5,7 +5,8 @@
 (function () {
   const DB = 'https://sync-3626f-default-rtdb.europe-west1.firebasedatabase.app/berail';
   const TZ = 'Europe/Paris';
-  const PURGE_HOUR = 23;
+  const RETENTION_DAYS = 7;   // les BeRail restent 7 jours
+  const PURGE_HOUR = 23;      // (ancien réglage, gardé pour l'affichage)
   const LATE_MS = 2 * 60 * 1000;
 
   /* ---------- REST ---------- */
@@ -39,14 +40,59 @@
     const e = new Error(error); e.status = status; e.data = { error }; throw e;
   }
 
-  /* Cache des photos (data URL) : chargées une fois par post */
+  /* Cache des photos (data URL) : en mémoire + IndexedDB, pour ne pas
+     retélécharger les photos à chaque ouverture (quota gratuit Firebase). */
   const photoCache = new Map();
+  const idb = new Promise((res) => {
+    try {
+      const r = indexedDB.open('berail-photos', 1);
+      r.onupgradeneeded = () => r.result.createObjectStore('p');
+      r.onsuccess = () => res(r.result);
+      r.onerror = () => res(null);
+    } catch (_) { res(null); }
+  });
+  async function idbGet(id) {
+    const d = await idb; if (!d) return null;
+    return new Promise((res) => { try { const q = d.transaction('p').objectStore('p').get(id); q.onsuccess = () => res(q.result || null); q.onerror = () => res(null); } catch (_) { res(null); } });
+  }
+  async function idbSet(id, v) {
+    const d = await idb; if (!d) return;
+    try { const t = d.transaction('p', 'readwrite').objectStore('p'); v == null ? t.delete(id) : t.put(v, id); } catch (_) {}
+  }
+  const inflight = new Map();
   async function photoOf(id) {
     if (photoCache.has(id)) return photoCache.get(id);
-    const p = (await get(`photos/${id}`)) || '';
-    if (p) photoCache.set(id, p);
-    return p;
+    if (inflight.has(id)) return inflight.get(id);
+    const job = (async () => {
+      let p = await idbGet(id);
+      if (!p) { p = (await get(`photos/${id}`)) || ''; if (p) idbSet(id, p); }
+      if (p) photoCache.set(id, p);
+      return p;
+    })();
+    inflight.set(id, job);
+    try { return await job; } finally { inflight.delete(id); }
   }
+
+  /* Chargement paresseux : toute <img data-pid="…"> reçoit sa photo
+     quand elle approche de l'écran. */
+  const io = 'IntersectionObserver' in window ? new IntersectionObserver((entries) => {
+    for (const en of entries) if (en.isIntersecting) { io.unobserve(en.target); hydrate(en.target); }
+  }, { rootMargin: '600px 0px' }) : null;
+  async function hydrate(img) {
+    const id = img.dataset.pid;
+    if (!id || img.dataset.loaded) return;
+    img.dataset.loaded = '1';
+    const src = await photoOf(id).catch(() => '');
+    if (src) { img.src = src; img.classList.add('ready'); }
+  }
+  function scan(root) {
+    (root.querySelectorAll ? root.querySelectorAll('img[data-pid]:not([data-loaded])') : []).forEach((img) => {
+      if (photoCache.has(img.dataset.pid) || !io) hydrate(img); else io.observe(img);
+    });
+  }
+  new MutationObserver((ms) => ms.forEach((m) => m.addedNodes.forEach((n) => n.nodeType === 1 && scan(n.parentNode || n))))
+    .observe(document.documentElement, { childList: true, subtree: true });
+  window.BerailPhoto = photoOf;
 
   let meCache = null;
   async function userFromToken(token) {
@@ -66,25 +112,29 @@
     return Object.values(obj).filter((p) => p && p.id);
   }
 
-  /* Nettoyage : les posts d'un autre jour, ou tous après PURGE_HOUR, sont effacés */
+  /* Nettoyage : les BeRail de plus de RETENTION_DAYS jours sont effacés
+     (photo comprise). Le « moment » du prof, lui, repart à zéro chaque jour. */
+  function ageDays(iso) {
+    const a = Date.parse(dayKey(new Date(iso)) + 'T00:00:00Z');
+    const b = Date.parse(dayKey() + 'T00:00:00Z');
+    return Math.round((b - a) / 86400000);
+  }
   let lastClean = 0;
   async function cleanup(code, force = false) {
-    if (!force && Date.now() - lastClean < 60 * 1000) return 0;
+    if (!force && Date.now() - lastClean < 5 * 60 * 1000) return 0;
     lastClean = Date.now();
     const today = dayKey();
     const k = await klassOf(code);
-    const crossed = force || (hourNow() >= PURGE_HOUR && k.lastPurgeDay !== today);
     const posts = await listPosts(code);
-    const stale = posts.filter((p) => crossed || dayKey(new Date(p.createdAt)) !== today);
+    const stale = posts.filter((p) => force || ageDays(p.createdAt) >= RETENTION_DAYS);
     const upd = {};
     for (const p of stale) {
       upd[`posts/${code}/${p.id}`] = null;
       upd[`photos/${p.id}`] = null;
       upd[`shares/${p.shareCode}`] = null;
-      photoCache.delete(p.id);
+      photoCache.delete(p.id); idbSet(p.id, null);
     }
-    if (k.moment && (crossed || dayKey(new Date(k.moment.at)) !== today)) upd[`classes/${code}/moment`] = null;
-    if (crossed && !force && k.code) upd[`classes/${code}/lastPurgeDay`] = today;
+    if (k.moment && dayKey(new Date(k.moment.at)) !== today) upd[`classes/${code}/moment`] = null;
     if (Object.keys(upd).length) await patch('', upd);
     return stale.length;
   }
@@ -100,7 +150,7 @@
       .map((c) => ({ name: c.name, text: c.text, at: c.at }));
     return {
       id: p.id, shareCode: p.shareCode, userName: p.userName, userId: p.userId,
-      photo: await photoOf(p.id), caption: p.caption || '', late: !!p.late, createdAt: p.createdAt,
+      photo: photoCache.get(p.id) || '', caption: p.caption || '', late: !!p.late, createdAt: p.createdAt,
       mine: !!(viewer && viewer.id === p.userId),
       reactions, myReaction, reactionTotal: total, comments, commentCount: comments.length
     };
@@ -143,7 +193,7 @@
       await cleanup(u.classCode);
       const k = await klassOf(u.classCode);
       const posts = await listPosts(u.classCode);
-      const mine = posts.filter((p) => p.userId === u.id).sort((a, b) => b.createdAt.localeCompare(a.createdAt))[0];
+      const mine = posts.filter((p) => p.userId === u.id && dayKey(new Date(p.createdAt)) === dayKey()).sort((a, b) => b.createdAt.localeCompare(a.createdAt))[0];
       return { moment: k.moment || null, myPostId: mine ? mine.id : null, postCount: posts.length, serverTime: Date.now() };
     }
 
@@ -151,11 +201,10 @@
       const u = await userFromToken(q.get('token'));
       await cleanup(u.classCode);
       const k = await klassOf(u.classCode);
-      const raw = (await listPosts(u.classCode)).sort((a, b) => b.createdAt.localeCompare(a.createdAt)).slice(0, 80);
+      const raw = (await listPosts(u.classCode)).sort((a, b) => b.createdAt.localeCompare(a.createdAt)).slice(0, 400);
       const posts = await Promise.all(raw.map((p) => postView(p, u)));
-      const mine = posts.find((p) => p.mine);
-      const others = posts.filter((p) => !p.mine);
-      return { klass: klassView(k), posts: mine ? [mine, ...others] : others, myPostId: mine ? mine.id : null, purgeHour: PURGE_HOUR, serverTime: Date.now() };
+      const mine = posts.find((p) => p.mine && dayKey(new Date(p.createdAt)) === dayKey());
+      return { klass: klassView(k), posts, myPostId: mine ? mine.id : null, purgeHour: PURGE_HOUR, retentionDays: RETENTION_DAYS, serverTime: Date.now() };
     }
 
     if (method === 'POST' && route === '/api/moment') {
@@ -235,4 +284,5 @@
   }
 
   window.BerailAPI = api;
+  window.BerailDayKey = dayKey;
 })();
