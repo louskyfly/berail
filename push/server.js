@@ -253,4 +253,8 @@ const server = http.createServer(async (req, res) => {
 server.listen(process.env.PORT || 10000, () => console.log('berail-push prêt'));
 setInterval(tick, 60 * 1000);
 // Render (gratuit) s'endort après 15 min sans visite : on se réveille nous-mêmes.
-if (process.env.PUBLIC_URL) setInterval(() => fetch(process.env.PUBLIC_URL + '/health').catch(() => {}), 10 * 60 * 1000);
+// Seulement de 6h à 22h : l'offre gratuite de Render donne 750 h par mois pour tout le compte.
+if (process.env.PUBLIC_URL) setInterval(() => {
+  const h = Math.floor(parisNow().min / 60);
+  if (h >= 6 && h < 22) fetch(process.env.PUBLIC_URL + '/health').catch(() => {});
+}, 10 * 60 * 1000);

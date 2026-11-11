@@ -1,9 +1,9 @@
 name: BeRail réveil
-# Toutes les 5 minutes : réveille le serveur de notifications (Render gratuit)
+# Toutes les 5 minutes de 5h à 23h (heure de Paris) : réveille le serveur de notifications (Render gratuit)
 # et lance les BeRail automatiques à l'heure prévue.
 on:
   schedule:
-    - cron: '*/5 * * * *'
+    - cron: '*/5 4-21 * * *'
   workflow_dispatch:
 jobs:
   tick:
