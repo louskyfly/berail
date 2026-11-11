@@ -75,7 +75,7 @@ async function pushClass(code, payload, onlyUserId) {
   }));
   return { sent, gone, failed, err };
 }
-const VERSION = '2026-11-11b';
+const VERSION = '2026-11-11c';
 const momentMsg = () => ({ title: "⚡ C'est l'heure du BeRail !", body: 'Tu as 2 minutes pour poster ta photo.', url: SITE + '/', tag: 'moment-' + Date.now() });
 
 async function fireMoment(code, by = 'BeRail') {
