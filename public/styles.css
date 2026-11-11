@@ -37,7 +37,7 @@ body{
 input,textarea{-webkit-user-select:text;user-select:text}
 button{font:inherit;color:inherit;background:none;border:0;padding:0;cursor:pointer}
 .hidden{display:none !important}
-#app{position:relative;max-width:640px;margin:0 auto;min-height:100%}
+#app{position:relative;max-width:720px;margin:0 auto;min-height:100%}
 .screen{min-height:100dvh}
 
 /* ── Connexion ── */
@@ -176,7 +176,7 @@ button{font:inherit;color:inherit;background:none;border:0;padding:0;cursor:poin
 /* ── Barre d'onglets ── */
 .tabbar{
   position:fixed;left:0;right:0;bottom:0;z-index:30;display:flex;align-items:center;justify-content:space-around;
-  max-width:640px;margin:0 auto;padding:8px 10px calc(8px + var(--safe-b));
+  max-width:720px;margin:0 auto;padding:8px 10px calc(8px + var(--safe-b));
   background:color-mix(in srgb,var(--bg) 88%,transparent);border-top:1px solid var(--line);
   backdrop-filter:saturate(180%) blur(16px);-webkit-backdrop-filter:saturate(180%) blur(16px);
 }
