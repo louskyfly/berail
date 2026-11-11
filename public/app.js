@@ -14,7 +14,7 @@ function hueOf(n) {
 }
 function avatarStyle(n) {
   const h = hueOf(n);
-  return `style="background:hsl(${h} 45% 52%)"`;
+  return `style="background:hsl(${h} 70% 56%)"`;
 }
 const PUSH_URL = 'https://berail-push.onrender.com';
 const VAPID_PUBLIC = 'BFm4BdMyqnUxIXmhirnYUdmkM_9uIHPqxF6-ZQHKvqsw0GyH5H62ZVs0nPIE8HjwluPzuINItmN2GowGsMx_-BE';

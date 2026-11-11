@@ -268,3 +268,27 @@ button{font:inherit;color:inherit;background:none;border:0;padding:0;cursor:poin
   .grid{grid-template-columns:repeat(4,1fr)}
   .post-media img,.post-media img.ph{aspect-ratio:4/5}
 }
+
+/* ── Touche de couleur ── */
+:root{--brand:#5b4bff;--brand-2:#ff4f8b;--brand-soft:#efedff;--grad:linear-gradient(135deg,#5b4bff,#ff4f8b)}
+@media (prefers-color-scheme:dark){:root{--brand:#8478ff;--brand-soft:#221f3d}}
+.brand-dot{background:var(--grad)}
+.btn-primary{background:var(--brand);color:#fff}
+.comment-form button{background:var(--brand);color:#fff}
+.moment{background:var(--grad);color:#fff}
+.moment button{background:#fff;color:var(--brand)}
+.moment.urgent{background:linear-gradient(135deg,#ff5b3a,#e5484d)}
+.tab[aria-pressed="true"]{color:var(--brand)}
+.shutter-ring{border-color:var(--brand)}
+.shutter-core{background:var(--grad)}
+.story-ring{background:conic-gradient(from 200deg,#ffcc00,#ff4f8b,#5b4bff,#22c3b5,#ffcc00)}
+.react.on{background:var(--brand-soft);border-color:var(--brand)}
+.react.on b{color:var(--brand)}
+.field input:focus,.review-foot input:focus{border-color:var(--brand);box-shadow:0 0 0 3px color-mix(in srgb,var(--brand) 20%,transparent)}
+.eyebrow{color:var(--brand) !important}
+.code-big,.share-code{color:var(--brand)}
+.live-dot{background:#22c55e}
+.days button.on{background:var(--brand);color:#fff}
+.switch input{accent-color:var(--brand)}
+.toast{background:var(--fg);color:var(--bg)}
+.capture .btn-primary{background:#fff;color:#111}

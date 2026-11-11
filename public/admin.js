@@ -8,7 +8,7 @@ const $$ = (s, r = document) => [...r.querySelectorAll(s)];
 const esc = (s) => String(s ?? '').replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
 const initials = (n) => String(n || '?').trim().split(/\s+/).map((w) => w[0]).join('').slice(0, 2).toUpperCase();
 const hue = (n) => [...String(n)].reduce((a, c) => (a * 31 + c.charCodeAt(0)) % 360, 7);
-const avatar = (n) => `<span class="avatar" style="background:hsl(${hue(n)} 45% 52%)">${esc(initials(n))}</span>`;
+const avatar = (n) => `<span class="avatar" style="background:hsl(${hue(n)} 70% 56%)">${esc(initials(n))}</span>`;
 const fdate = (iso) => new Date(iso).toLocaleString('fr-FR', { timeZone: 'Europe/Paris', weekday: 'short', day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' });
 let KEY = localStorage.getItem('berail.adminKey') || '';
 let DATA = null;
