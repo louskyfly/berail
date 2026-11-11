@@ -16,6 +16,39 @@ function avatarStyle(n) {
   const h = hueOf(n);
   return `style="background:hsl(${h} 70% 56%)"`;
 }
+/* ---------- avatars personnalisés ---------- */
+const AV_BGS = {
+  aurore: 'linear-gradient(135deg,#5b4bff,#ff4f8b)', sunset: 'linear-gradient(135deg,#ff9a3c,#ff4f8b)',
+  ocean: 'linear-gradient(135deg,#22c3b5,#3b82f6)', lime: 'linear-gradient(135deg,#a3e635,#22c55e)',
+  peche: 'linear-gradient(135deg,#ffd6a5,#ff8fab)', nuit: 'linear-gradient(135deg,#1e1b4b,#6d28d9)',
+  citron: 'linear-gradient(135deg,#fde047,#fb923c)', glace: 'linear-gradient(135deg,#a5f3fc,#c4b5fd)',
+  feu: 'linear-gradient(135deg,#ef4444,#f59e0b)', menthe: 'linear-gradient(135deg,#6ee7b7,#14b8a6)',
+  bonbon: 'linear-gradient(135deg,#f0abfc,#818cf8)', arcenciel: 'linear-gradient(135deg,#f43f5e,#f59e0b,#22c55e,#3b82f6,#a855f7)'
+};
+const AV_RINGS = {
+  aurore: 'linear-gradient(135deg,#5b4bff,#ff4f8b)', arcenciel: 'conic-gradient(#f43f5e,#f59e0b,#22c55e,#3b82f6,#a855f7,#f43f5e)',
+  or: 'linear-gradient(135deg,#fde68a,#d97706,#fde68a)', ocean: 'linear-gradient(135deg,#22c3b5,#3b82f6)',
+  feu: 'linear-gradient(135deg,#ef4444,#f59e0b)', blanc: 'linear-gradient(#ffffff,#ffffff)'
+};
+const AV_EMOJIS = ['😎','🤩','🥳','😈','👻','🤖','👽','🐱','🐶','🦊','🐼','🐸','🦄','🐙','🦋','🐝','🌸','🌈','🔥','⚡','⭐','🌙','🍕','🍩','🍓','🥑','⚽','🏀','🎮','🎧','🎸','📸','🚀','🛹','🏄','💎','👑','🧠','💜','🫶','🤙','✌️','🐢','🦖','🍉','🧋','🌊','🌵'];
+function profileOf(userId) { return (S.profiles && S.profiles[userId]) || null; }
+function avatarAttrs(name, userId, pr) {
+  pr = pr || profileOf(userId);
+  let bg = pr && pr.bg ? (AV_BGS[pr.bg] || (/^#[0-9a-f]{6}$/i.test(pr.bg) ? pr.bg : null)) : null;
+  if (!bg) bg = `hsl(${hueOf(name)} 70% 56%)`;
+  let content = esc(initials(name)), cls = '';
+  if (pr && pr.mode === 'photo' && pr.photo) { bg = `url("${pr.photo}") center/cover no-repeat`; content = ''; cls = 'av-photo'; }
+  else if (pr && pr.mode === 'emoji' && pr.emoji) { content = esc(pr.emoji); cls = 'av-emoji'; }
+  const ring = pr && pr.ring && AV_RINGS[pr.ring];
+  const style = ring
+    ? `background:${bg.startsWith('url') ? bg : bg} padding-box,${ring} border-box;border:3px solid transparent`
+    : `background:${bg}`;
+  return { style, content, cls };
+}
+function avatarHTML(name, userId, extra = '', tag = 'div', forceContent = null, pr = null) {
+  const a = avatarAttrs(name, userId, pr);
+  return `<${tag} class="avatar ${a.cls} ${extra}" style='${a.style}'>${forceContent != null ? forceContent : a.content}</${tag}>`;
+}
 const PUSH_URL = 'https://berail-push.onrender.com';
 const VAPID_PUBLIC = 'BFm4BdMyqnUxIXmhirnYUdmkM_9uIHPqxF6-ZQHKvqsw0GyH5H62ZVs0nPIE8HjwluPzuINItmN2GowGsMx_-BE';
 const BLANK = 'data:image/gif;base64,R0lGODlhAQABAAAAACH5BAEKAAEALAAAAAABAAEAAAICTAEAOw==';
@@ -37,7 +70,8 @@ const S = {
   lastPostCount: 0,
   purgeHour: 23,
   retentionDays: 7,
-  sharedMode: false
+  sharedMode: false,
+  profiles: {}
 };
 
 function toast(msg) {
@@ -125,14 +159,18 @@ async function logout() {
 function updateTopAvatar() {
   const el = $('#topAvatar');
   if (!el || !S.user) return;
-  el.textContent = initials(S.user.name);
-  el.setAttribute('style', `background:linear-gradient(140deg,hsl(${hueOf(S.user.name)} 85% 64%),hsl(${(hueOf(S.user.name) + 55) % 360} 78% 46%))`);
+  const a = avatarAttrs(S.user.name, S.user.id);
+  el.innerHTML = a.content;
+  el.className = 'avatar sm ' + a.cls;
+  el.setAttribute('style', a.style);
 }
 
 /* ---------- données ---------- */
 async function refresh(rerender = false) {
   const r = await API('/api/feed?token=' + encodeURIComponent(S.token));
   S.posts = r.posts || [];
+  S.profiles = r.profiles || S.profiles || {};
+  updateTopAvatar();
   S.myPostId = r.myPostId;
   S.klass = r.klass || S.klass;
   S.moment = r.klass ? r.klass.moment : null;
@@ -214,7 +252,7 @@ function postCard(p) {
     <div class="post-media">
       ${imgTag(p, 'BeRail de ' + p.userName)}
       <div class="media-top">
-        <div class="avatar" ${avatarStyle(p.userName)}>${initials(p.userName)}</div>
+        ${avatarHTML(p.userName, p.userId)}
         <div class="post-who">
           <b>${esc(p.userName)}${p.mine ? ' <i>· toi</i>' : ''}</b>
           <span>${hhmm(p.createdAt)} · ${left <= 1 ? "s'efface ce soir" : `encore ${left} j`}${p.late ? '<span class="badge-late">En retard</span>' : ''}</span>
@@ -242,10 +280,10 @@ function storiesRow() {
   for (const p of today) if (!seen.has(p.userId)) { seen.add(p.userId); people.push(p); }
   const meDone = today.some((p) => p.mine);
   const me = `<button class="story ${meDone ? 'done' : 'todo'}" ${meDone ? `data-jump="${today.find((p) => p.mine).id}"` : 'id="storyMe"'}>
-      <span class="story-ring"><span class="avatar" ${avatarStyle(S.user.name)}>${meDone ? initials(S.user.name) : '+'}</span></span>
+      <span class="story-ring">${meDone ? avatarHTML(S.user.name, S.user.id, '', 'span') : '<span class="avatar">+</span>'}</span>
       <span class="story-name">Toi</span></button>`;
   const others = people.filter((p) => !p.mine).map((p) => `<button class="story done" data-jump="${p.id}">
-      <span class="story-ring"><span class="avatar" ${avatarStyle(p.userName)}>${initials(p.userName)}</span></span>
+      <span class="story-ring">${avatarHTML(p.userName, p.userId, '', 'span')}</span>
       <span class="story-name">${esc(p.userName)}</span></button>`).join('');
   return `<div class="stories">${me}${others}</div>`;
 }
@@ -477,8 +515,9 @@ function renderProfile() {
   $('#view-profile').innerHTML = `
     <div class="view-head"><h2>Profil</h2><p>Ton identité dans cette classe</p></div>
     <div class="profile-card">
-      <div class="avatar" ${avatarStyle(S.user.name)}>${initials(S.user.name)}</div>
-      <div><h2>${esc(S.user.name)}</h2><p>Classe # ${esc(S.klass.code)}${isOwner ? ' · organisateur' : ''}</p></div>
+      <button class="av-edit" id="pAvatar" aria-label="Personnaliser ma photo de profil">${avatarHTML(S.user.name, S.user.id, 'xl')}<span class="av-pen">✎</span></button>
+      <div style="flex:1;min-width:0"><h2>${esc(S.user.name)}</h2><p>Classe # ${esc(S.klass.code)}${isOwner ? ' · organisateur' : ''}</p>
+        <button class="mini-btn" id="pAvatar2" style="margin-top:10px">🎨 Personnaliser mon avatar</button></div>
     </div>
     <div class="stat-row">
       <div class="stat"><b>${mine.length}</b><span>BeRail postés</span></div>
@@ -508,6 +547,8 @@ function renderProfile() {
       <button class="btn btn-ghost" style="width:100%" id="pLogout">Changer de compte</button>
     </div>`;
 
+  $('#pAvatar').onclick = avatarEditor;
+  $('#pAvatar2').onclick = avatarEditor;
   $('#pCopy').onclick = () => copy(S.klass.code, 'Code copié');
   $('#pShare').onclick = classModal;
   if (isOwner) {
@@ -864,3 +905,77 @@ window.addEventListener('resize', () => { clearTimeout(window._rz); window._rz =
 setInterval(() => { if (S.moment && !S.myPostId) renderBanner(); }, 1000);
 
 boot();
+
+
+/* ---------- éditeur d'avatar ---------- */
+function squarePhoto(file, size = 256) {
+  return new Promise((resolve, reject) => {
+    const url = URL.createObjectURL(file);
+    const img = new Image();
+    img.onload = () => {
+      const c = document.createElement('canvas'); c.width = c.height = size;
+      const side = Math.min(img.naturalWidth, img.naturalHeight);
+      c.getContext('2d').drawImage(img, (img.naturalWidth - side) / 2, (img.naturalHeight - side) / 2, side, side, 0, 0, size, size);
+      URL.revokeObjectURL(url);
+      let q = 0.85, out = c.toDataURL('image/jpeg', q);
+      while (out.length > 85000 && q > 0.4) { q -= 0.1; out = c.toDataURL('image/jpeg', q); }
+      resolve(out);
+    };
+    img.onerror = () => { URL.revokeObjectURL(url); reject(new Error('img')); };
+    img.src = url;
+  });
+}
+
+function avatarEditor() {
+  const cur = profileOf(S.user.id) || {};
+  const d = { mode: cur.mode || 'initial', emoji: cur.emoji || '😎', bg: cur.bg || 'aurore', ring: cur.ring || '', photo: cur.photo || '' };
+  openModal(`<div class="sheet av-sheet">
+    <h3>Ton avatar</h3>
+    <div class="av-preview" id="avPrev"></div>
+    <div class="seg av-seg" id="avMode">
+      <button data-m="initial">Initiale</button><button data-m="emoji">Emoji</button><button data-m="photo">Photo</button>
+    </div>
+    <div id="avPanEmoji" class="av-pan">
+      <div class="av-emojis">${AV_EMOJIS.map((e) => `<button data-e="${e}">${e}</button>`).join('')}</div>
+      <input class="av-input" id="avEmojiIn" maxlength="8" placeholder="…ou tape n'importe quel emoji">
+    </div>
+    <div id="avPanPhoto" class="av-pan">
+      <label class="btn btn-ghost file-btn" style="max-width:none">📷 Choisir une photo<input type="file" accept="image/*" id="avFile"></label>
+    </div>
+    <div class="av-label">Fond</div>
+    <div class="av-swatches" id="avBg">${Object.entries(AV_BGS).map(([k, v]) => `<button data-bg="${k}" style="background:${v}" aria-label="${k}"></button>`).join('')}
+      <label class="av-custom" title="Couleur perso" style="background:conic-gradient(red,yellow,lime,cyan,blue,magenta,red)"><input type="color" id="avColor" value="${/^#/.test(d.bg) ? d.bg : '#5b4bff'}"></label></div>
+    <div class="av-label">Contour</div>
+    <div class="av-swatches" id="avRing"><button data-ring="" class="av-none" aria-label="Aucun">∅</button>${Object.entries(AV_RINGS).map(([k, v]) => `<button data-ring="${k}" style="background:${v}" aria-label="${k}"></button>`).join('')}</div>
+    <div class="row" style="margin-top:18px"><button class="btn btn-ghost" data-close>Annuler</button><button class="btn btn-primary" id="avSave">Enregistrer</button></div>
+  </div>`);
+  const draw = () => {
+    $('#avPrev').innerHTML = avatarHTML(S.user.name, S.user.id, 'xxl', 'div', null, d);
+    $$('#avMode button').forEach((b) => b.classList.toggle('on', b.dataset.m === d.mode));
+    $('#avPanEmoji').classList.toggle('hidden', d.mode !== 'emoji');
+    $('#avPanPhoto').classList.toggle('hidden', d.mode !== 'photo');
+    $$('#avBg [data-bg]').forEach((b) => b.classList.toggle('on', b.dataset.bg === d.bg));
+    $$('#avRing button').forEach((b) => b.classList.toggle('on', b.dataset.ring === d.ring));
+    $$('.av-emojis button').forEach((b) => b.classList.toggle('on', d.mode === 'emoji' && b.dataset.e === d.emoji));
+  };
+  $$('#avMode button').forEach((b) => b.onclick = () => { d.mode = b.dataset.m; if (d.mode === 'photo' && !d.photo) $('#avFile').click(); draw(); });
+  $$('.av-emojis button').forEach((b) => b.onclick = () => { d.emoji = b.dataset.e; d.mode = 'emoji'; draw(); });
+  $('#avEmojiIn').oninput = (e) => { const v = e.target.value.trim(); if (v) { d.emoji = [...v].slice(0, 2).join(''); d.mode = 'emoji'; draw(); } };
+  $$('#avBg [data-bg]').forEach((b) => b.onclick = () => { d.bg = b.dataset.bg; draw(); });
+  $('#avColor').oninput = (e) => { d.bg = e.target.value; draw(); };
+  $$('#avRing button').forEach((b) => b.onclick = () => { d.ring = b.dataset.ring; draw(); });
+  $('#avFile').onchange = async (e) => {
+    const f = e.target.files && e.target.files[0]; if (!f) return;
+    try { d.photo = await squarePhoto(f); d.mode = 'photo'; draw(); } catch (_) { toast('Photo illisible'); }
+  };
+  $('#avSave').onclick = async () => {
+    const btn = $('#avSave'); btn.disabled = true; btn.textContent = 'Enregistrement…';
+    try {
+      const body = { token: S.token, profile: { mode: d.mode, emoji: d.emoji, bg: d.bg, ring: d.ring, photo: d.mode === 'photo' ? d.photo : '' } };
+      const r = await API('/api/profile', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) });
+      S.profiles[S.user.id] = r.profile;
+      closeModal(); updateTopAvatar(); setView(S.view); toast('Avatar mis à jour ✨');
+    } catch (_) { btn.disabled = false; btn.textContent = 'Enregistrer'; toast("Impossible d'enregistrer"); }
+  };
+  draw();
+}

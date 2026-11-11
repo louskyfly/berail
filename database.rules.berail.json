@@ -168,6 +168,36 @@
           }
         }
       }
+    },
+    "profiles": {
+      "$code": {
+        ".read": true,
+        "$uid": {
+          ".write": "$uid.matches(/^[a-f0-9]{12}$/) && $code.matches(/^[A-Z0-9-]{3,12}$/)",
+          ".validate": "!newData.exists() || newData.hasChildren(['mode'])",
+          "mode": {
+            ".validate": "newData.isString() && newData.val().length <= 8"
+          },
+          "emoji": {
+            ".validate": "newData.isString() && newData.val().length <= 16"
+          },
+          "bg": {
+            ".validate": "newData.isString() && newData.val().length <= 12"
+          },
+          "ring": {
+            ".validate": "newData.isString() && newData.val().length <= 12"
+          },
+          "photo": {
+            ".validate": "newData.isString() && newData.val().beginsWith('data:image/') && newData.val().length <= 90000"
+          },
+          "at": {
+            ".validate": "newData.isString() && newData.val().length <= 30"
+          },
+          "$other": {
+            ".validate": false
+          }
+        }
+      }
     }
   }
 }

@@ -204,7 +204,8 @@
       const raw = (await listPosts(u.classCode)).sort((a, b) => b.createdAt.localeCompare(a.createdAt)).slice(0, 400);
       const posts = await Promise.all(raw.map((p) => postView(p, u)));
       const mine = posts.find((p) => p.mine && dayKey(new Date(p.createdAt)) === dayKey());
-      return { klass: klassView(k), posts, myPostId: mine ? mine.id : null, purgeHour: PURGE_HOUR, retentionDays: RETENTION_DAYS, serverTime: Date.now() };
+      const profiles = (await get(`profiles/${u.classCode}`)) || {};
+      return { klass: klassView(k), posts, profiles, myPostId: mine ? mine.id : null, purgeHour: PURGE_HOUR, retentionDays: RETENTION_DAYS, serverTime: Date.now() };
     }
 
     if (method === 'POST' && route === '/api/moment') {
@@ -214,6 +215,22 @@
       const moment = { at: Date.now(), by: u.name };
       await put(`classes/${u.classCode}/moment`, moment);
       return { moment };
+    }
+
+    if (method === 'POST' && route === '/api/profile') {
+      const u = await userFromToken(body.token);
+      const p = body.profile || {};
+      const out = { mode: ['initial', 'emoji', 'photo'].includes(p.mode) ? p.mode : 'initial', at: nowIso() };
+      if (p.emoji) out.emoji = String(p.emoji).slice(0, 16);
+      if (p.bg) out.bg = String(p.bg).slice(0, 12);
+      if (p.ring) out.ring = String(p.ring).slice(0, 12);
+      if (out.mode === 'photo') {
+        const ph = String(p.photo || '');
+        if (!/^data:image\/(jpeg|png|webp);base64,/.test(ph) || ph.length > 90000) fail(400, 'bad_photo');
+        out.photo = ph;
+      }
+      await put(`profiles/${u.classCode}/${u.id}`, out);
+      return { profile: out };
     }
 
     if (method === 'POST' && route === '/api/push-sub') {

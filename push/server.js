@@ -197,7 +197,7 @@ async function adminAction(b) {
     case 'deleteUser': {
       const u = await get(`users/${b.token}`);
       if (!u) throw 404;
-      await patch('', { [`users/${b.token}`]: null, [`push/${u.classCode}/${u.id}`]: null });
+      await patch('', { [`users/${b.token}`]: null, [`push/${u.classCode}/${u.id}`]: null, [`profiles/${u.classCode}/${u.id}`]: null });
       return { ok: true };
     }
     case 'deletePost': {
@@ -209,7 +209,7 @@ async function adminAction(b) {
     case 'deleteClass': {
       if (!CODE.test(code)) throw 400;
       const [posts, users] = await Promise.all([get(`posts/${code}`), get('users')]);
-      const upd = { [`classes/${code}`]: null, [`pushlog/${code}`]: null, [`posts/${code}`]: null, [`push/${code}`]: null, [`schedules/${code}`]: null, [`fired/${code}`]: null };
+      const upd = { [`classes/${code}`]: null, [`pushlog/${code}`]: null, [`posts/${code}`]: null, [`push/${code}`]: null, [`profiles/${code}`]: null, [`schedules/${code}`]: null, [`fired/${code}`]: null };
       for (const p of Object.values(posts || {})) { upd[`photos/${p.id}`] = null; upd[`shares/${p.shareCode}`] = null; }
       for (const [t, u] of Object.entries(users || {})) if (u && u.classCode === code) upd[`users/${t}`] = null;
       await patch('', upd);

@@ -328,3 +328,58 @@ body{background:
 .panel h3::before{content:"";display:inline-block;width:8px;height:8px;border-radius:50%;margin-right:8px;vertical-align:1px;background:var(--grad)}
 .sec{border-top:1px solid transparent;border-image:linear-gradient(90deg,#5b4bff55,#ff4f8b55,transparent) 1}
 .capture .btn-primary{background:#fff;color:#111}
+
+/* ── Avatars personnalisés ── */
+.avatar.av-emoji{font-size:1.25em;font-weight:400}
+.avatar.sm.av-emoji{font-size:15px}
+.avatar.xl{width:72px !important;height:72px !important;font-size:28px !important}
+.avatar.xl.av-emoji{font-size:38px !important}
+.avatar.xxl{width:120px;height:120px;font-size:46px;box-shadow:0 10px 30px rgba(91,75,255,.25)}
+.avatar.xxl.av-emoji{font-size:64px}
+.story-ring .avatar.av-emoji{font-size:28px}
+.av-edit{position:relative;flex:none;border-radius:50%}
+.av-pen{position:absolute;right:-2px;bottom:-2px;width:26px;height:26px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:13px;color:#fff;background:var(--grad);border:2px solid var(--surface)}
+.av-sheet{max-height:92dvh;overflow-y:auto}
+.av-preview{display:flex;justify-content:center;padding:6px 0 16px}
+.av-seg{display:flex;width:100%;margin-bottom:12px}
+.av-seg button{flex:1}
+.av-pan{margin-bottom:6px}
+.av-emojis{display:grid;grid-template-columns:repeat(8,1fr);gap:4px;margin-bottom:8px}
+.av-emojis button{font-size:24px;aspect-ratio:1;border-radius:10px}
+.av-emojis button.on{background:var(--brand-soft);box-shadow:inset 0 0 0 2px var(--brand)}
+.av-input{width:100%;background:var(--surface-2);border:1px solid transparent;border-radius:12px;padding:10px 12px;font-size:16px;color:var(--fg);outline:none}
+.av-label{font-size:13px;font-weight:600;color:var(--muted);margin:14px 0 8px}
+.av-swatches{display:flex;flex-wrap:wrap;gap:8px}
+.av-swatches button,.av-custom{width:34px;height:34px;border-radius:50%;position:relative;overflow:hidden;flex:none}
+.av-swatches button.on{box-shadow:0 0 0 2px var(--surface),0 0 0 4px var(--fg)}
+.av-custom input{position:absolute;inset:0;opacity:0;width:100%;height:100%;cursor:pointer}
+.av-none{background:var(--surface-2);color:var(--muted);font-size:16px}
+.seg button.on{background:var(--surface);color:var(--fg);box-shadow:0 1px 3px rgba(0,0,0,.1)}
+.seg{display:inline-flex;border-radius:12px;background:var(--surface-2);padding:3px;gap:2px}
+.seg button{padding:8px 14px;border-radius:9px;font-size:14px;font-weight:500;color:var(--muted)}
+
+/* ── Encore plus de couleur ── */
+body{background:
+  radial-gradient(60% 40% at 0% 0%,color-mix(in srgb,#5b4bff 26%,transparent),transparent 70%),
+  radial-gradient(55% 38% at 100% 8%,color-mix(in srgb,#ff4f8b 22%,transparent),transparent 70%),
+  radial-gradient(60% 40% at 100% 70%,color-mix(in srgb,#ff9a3c 14%,transparent),transparent 70%),
+  radial-gradient(65% 42% at 0% 100%,color-mix(in srgb,#22c3b5 20%,transparent),transparent 70%),
+  var(--bg);background-attachment:fixed}
+.post,.panel,.empty,.shared-card{
+  border:1.5px solid transparent;
+  background:linear-gradient(var(--surface),var(--surface)) padding-box,
+             linear-gradient(135deg,#5b4bff,#ff4f8b,#ff9a3c,#22c3b5) border-box;
+  box-shadow:0 10px 30px color-mix(in srgb,#5b4bff 12%,transparent)}
+.panel{background:linear-gradient(160deg,color-mix(in srgb,#5b4bff 6%,var(--surface)),color-mix(in srgb,#ff4f8b 6%,var(--surface))) padding-box,
+  linear-gradient(135deg,#5b4bff90,#ff4f8b90,#22c3b590) border-box}
+.panel:nth-of-type(odd){background:linear-gradient(160deg,color-mix(in srgb,#22c3b5 7%,var(--surface)),color-mix(in srgb,#5b4bff 6%,var(--surface))) padding-box,
+  linear-gradient(135deg,#22c3b590,#5b4bff90) border-box}
+.topbar{background:linear-gradient(90deg,color-mix(in srgb,#5b4bff 14%,var(--bg)),color-mix(in srgb,#ff4f8b 12%,var(--bg)));border-image:linear-gradient(90deg,#5b4bff,#ff4f8b,#ff9a3c) 1}
+.tabbar{background:linear-gradient(90deg,color-mix(in srgb,#5b4bff 12%,var(--bg)),color-mix(in srgb,#ff4f8b 10%,var(--bg)));border-image:linear-gradient(90deg,#5b4bff,#ff4f8b,#ff9a3c) 1}
+.chip{background:linear-gradient(135deg,color-mix(in srgb,#5b4bff 18%,var(--surface)),color-mix(in srgb,#ff4f8b 16%,var(--surface)))}
+.react{background:color-mix(in srgb,#5b4bff 9%,var(--surface-2))}
+.day-label{font-size:19px}
+.day-label span,.day-label b{background:var(--grad);-webkit-background-clip:text;background-clip:text;color:transparent}
+.sheet{border:1.5px solid transparent;background:linear-gradient(var(--surface),var(--surface)) padding-box,linear-gradient(135deg,#5b4bff,#ff4f8b,#22c3b5) border-box}
+.modal{background:linear-gradient(135deg,rgba(91,75,255,.35),rgba(255,79,139,.3))}
+.capture .btn-primary{background:#fff;color:#111}
