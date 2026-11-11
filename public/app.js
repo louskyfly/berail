@@ -14,7 +14,7 @@ function hueOf(n) {
 }
 function avatarStyle(n) {
   const h = hueOf(n);
-  return `style="background:linear-gradient(140deg,hsl(${h} 85% 64%),hsl(${(h + 55) % 360} 78% 46%))"`;
+  return `style="background:hsl(${h} 45% 52%)"`;
 }
 const PUSH_URL = 'https://berail-push.onrender.com';
 const VAPID_PUBLIC = 'BFm4BdMyqnUxIXmhirnYUdmkM_9uIHPqxF6-ZQHKvqsw0GyH5H62ZVs0nPIE8HjwluPzuINItmN2GowGsMx_-BE';
@@ -447,7 +447,7 @@ function renderMemories() {
         <span class="g-date">${esc(dayLabel(p.createdAt))}</span>
         ${p.late ? '<span class="g-late">En retard</span>' : ''}
       </figure>`).join('')}</div>`
-      : `<div class="empty">Tes BeRail de la semaine apparaîtront ici.<br><br><span style="color:rgba(255,255,255,.45)">Ils restent ${S.retentionDays} jours : télécharge ceux que tu veux garder.</span></div>`}`;
+      : `<div class="empty">Tes BeRail de la semaine apparaîtront ici.<br><br><span style="color:var(--muted)">Ils restent ${S.retentionDays} jours : télécharge ceux que tu veux garder.</span></div>`}`;
 
   $$('#view-memories figure').forEach((f) => {
     f.onclick = () => {
@@ -457,7 +457,7 @@ function renderMemories() {
         ${imgTag(p, 'BeRail', 'modal-img')}
         <div style="padding:16px">
           <h3>${esc(p.userName)} · ${new Date(p.createdAt).toLocaleString('fr-FR', { day: 'numeric', month: 'long', hour: '2-digit', minute: '2-digit' })}</h3>
-          <p style="margin:6px 0 14px">${p.caption ? esc(p.caption) : '<span style="color:#777">Sans légende</span>'}</p>
+          <p style="margin:6px 0 14px">${p.caption ? esc(p.caption) : '<span style="color:var(--muted)">Sans légende</span>'}</p>
           <div class="row">
             <button class="btn btn-primary" id="memDl">${ICON.dl} Télécharger</button>
             <button class="btn btn-ghost" id="memShare">Code</button>
@@ -500,7 +500,7 @@ function renderProfile() {
     <div class="panel">
       <h3>Espace & nettoyage</h3>
       <p>Chaque BeRail reste ${S.retentionDays} jours, puis il est effacé automatiquement pour libérer la place. Télécharge ceux que tu veux garder.</p>
-      ${isOwner ? '<button class="btn btn-ghost" style="width:100%;color:#ff8a80;border-color:#3d1414" id="pPurge">Vider les photos maintenant</button>' : ''}
+      ${isOwner ? '<button class="btn btn-ghost" style="width:100%;color:var(--danger)" id="pPurge">Vider les photos maintenant</button>' : ''}
     </div>
     <div class="panel">
       <h3>Mon compte</h3>
@@ -781,8 +781,8 @@ async function showShared(code) {
         ${imgTag(p, 'BeRail de ' + p.userName)}
         <div class="shared-body">
           <h3>${esc(p.userName)}${p.late ? '<span class="badge-late">⚠️ En retard</span>' : ''}</h3>
-          <p>${p.caption ? esc(p.caption) : '<span style="color:#777">Sans légende</span>'} · ${ago(p.createdAt)}</p>
-          <p style="color:#777;font-size:12px;margin-top:10px">Classe # ${esc(r.klass.code)}</p>
+          <p>${p.caption ? esc(p.caption) : '<span style="color:var(--muted)">Sans légende</span>'} · ${ago(p.createdAt)}</p>
+          <p style="color:var(--muted);font-size:12px;margin-top:10px">Classe # ${esc(r.klass.code)}</p>
         </div>
       </div>
       <div class="shared-cta">

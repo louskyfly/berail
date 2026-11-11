@@ -8,7 +8,7 @@ const $$ = (s, r = document) => [...r.querySelectorAll(s)];
 const esc = (s) => String(s ?? '').replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
 const initials = (n) => String(n || '?').trim().split(/\s+/).map((w) => w[0]).join('').slice(0, 2).toUpperCase();
 const hue = (n) => [...String(n)].reduce((a, c) => (a * 31 + c.charCodeAt(0)) % 360, 7);
-const avatar = (n) => `<span class="avatar" style="background:linear-gradient(135deg,hsl(${hue(n)},80%,60%),hsl(${(hue(n) + 50) % 360},75%,45%))">${esc(initials(n))}</span>`;
+const avatar = (n) => `<span class="avatar" style="background:hsl(${hue(n)} 45% 52%)">${esc(initials(n))}</span>`;
 const fdate = (iso) => new Date(iso).toLocaleString('fr-FR', { timeZone: 'Europe/Paris', weekday: 'short', day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' });
 let KEY = localStorage.getItem('berail.adminKey') || '';
 let DATA = null;
@@ -99,7 +99,7 @@ function classCard(c) {
       <span class="chip">📸 <b>${c.posts.length}</b> BeRail (7 j)</span>
       <span class="chip">⭐ ${esc(c.ownerName || '—')}</span>
       ${c.lastPush ? `<span class="chip">Dernière notif : ${esc(fdate(c.lastPush.at))} · ${c.lastPush.sent} reçue${c.lastPush.sent > 1 ? 's' : ''}${c.lastPush.failed ? ` · ${c.lastPush.failed} échec` : ''}</span>` : ''}
-      ${momentOn ? '<span class="chip" style="color:#ffe98a">⚡ moment en cours</span>' : ''}
+      ${momentOn ? '<span class="chip">⚡ moment en cours</span>' : ''}
     </div>
     <div class="linkrow"><code>${esc(invite)}</code><button class="btn btn-ghost btn-sm" data-copy="${esc(invite)}">Lien d'invitation</button></div>
 
