@@ -170,6 +170,9 @@ async function refresh(rerender = false) {
   const r = await API('/api/feed?token=' + encodeURIComponent(S.token));
   S.posts = r.posts || [];
   S.profiles = r.profiles || S.profiles || {};
+  S.stats = r.stats || S.stats || {};
+  S.momentDays = r.momentDays || S.momentDays || {};
+  S.today = r.today || S.today;
   updateTopAvatar();
   S.myPostId = r.myPostId;
   S.klass = r.klass || S.klass;
@@ -254,7 +257,7 @@ function postCard(p) {
       <div class="media-top">
         ${avatarHTML(p.userName, p.userId)}
         <div class="post-who">
-          <b>${esc(p.userName)}${p.mine ? ' <i>· toi</i>' : ''}</b>
+          <b>${esc(p.userName)}${p.mine ? ' <i>· toi</i>' : ''}${streakChip(p.userId)}</b>
           <span>${hhmm(p.createdAt)} · ${left <= 1 ? "s'efface ce soir" : `encore ${left} j`}${p.late ? '<span class="badge-late">En retard</span>' : ''}</span>
         </div>
       </div>
@@ -281,10 +284,10 @@ function storiesRow() {
   const meDone = today.some((p) => p.mine);
   const me = `<button class="story ${meDone ? 'done' : 'todo'}" ${meDone ? `data-jump="${today.find((p) => p.mine).id}"` : 'id="storyMe"'}>
       <span class="story-ring">${meDone ? avatarHTML(S.user.name, S.user.id, '', 'span') : '<span class="avatar">+</span>'}</span>
-      <span class="story-name">Toi</span></button>`;
+      <span class="story-name">Toi</span>${streakChip(S.user.id)}</button>`;
   const others = people.filter((p) => !p.mine).map((p) => `<button class="story done" data-jump="${p.id}">
       <span class="story-ring">${avatarHTML(p.userName, p.userId, '', 'span')}</span>
-      <span class="story-name">${esc(p.userName)}</span></button>`).join('');
+      <span class="story-name">${esc(p.userName)}</span>${streakChip(p.userId)}</button>`).join('');
   return `<div class="stories">${me}${others}</div>`;
 }
 
@@ -317,12 +320,13 @@ function renderFeed() {
     g.posts.push(p);
   }
   for (const g of groups) g.posts.sort((a, b) => (b.mine - a.mine) || b.createdAt.localeCompare(a.createdAt));
-  el.innerHTML = head + storiesRow() + groups.map((g) => `
+  el.innerHTML = head + storiesRow() + (isRecapDay() ? recapCard() : '') + groups.map((g) => `
     <section class="day">
       <h3 class="day-label"><span>${esc(g.label)}</span><small>${g.posts.length} BeRail${g.posts.length > 1 ? 's' : ''}</small></h3>
       ${g.posts.map(postCard).join('')}
     </section>`).join('');
   const sm = $('#storyMe'); if (sm) sm.onclick = openCapture;
+  const orc = $('#openRecap'); if (orc) orc.onclick = openRecap;
   $$('#view-feed [data-jump]').forEach((b) => b.onclick = () => {
     const t = $(`#view-feed article[data-post="${b.dataset.jump}"]`);
     if (t) t.scrollIntoView({ behavior: 'smooth', block: 'start' });
@@ -479,6 +483,7 @@ function renderMemories() {
   const el = $('#view-memories');
   el.innerHTML = `
     <div class="view-head"><p class="eyebrow">Les ${S.retentionDays} derniers jours</p><h2>Mémoires</h2><p>${mine.length} BeRail${mine.length > 1 ? 's' : ''} posté${mine.length > 1 ? 's' : ''} · télécharge ceux que tu veux garder</p></div>
+    ${recapCard()}
     ${mine.length ? `<div class="grid">${mine.map((p) => `
       <figure data-open="${p.id}">
         ${imgTag(p, 'BeRail')}
@@ -487,6 +492,7 @@ function renderMemories() {
       </figure>`).join('')}</div>`
       : `<div class="empty">Tes BeRail de la semaine apparaîtront ici.<br><br><span style="color:var(--muted)">Ils restent ${S.retentionDays} jours : télécharge ceux que tu veux garder.</span></div>`}`;
 
+  { const orc = $('#openRecap'); if (orc) orc.onclick = openRecap; }
   $$('#view-memories figure').forEach((f) => {
     f.onclick = () => {
       const p = S.posts.find((x) => x.id === f.dataset.open);
@@ -550,8 +556,9 @@ function renderProfile() {
     <div class="stat-row">
       <div class="stat"><b>${mine.length}</b><span>BeRail postés</span></div>
       <div class="stat"><b>${reactions}</b><span>réactions reçues</span></div>
-      <div class="stat"><b>${S.posts.length}</b><span>cette semaine</span></div>
+      <div class="stat"><b>${streakOf(S.user.id)}</b><span>🔥 jours de suite</span></div>
     </div>
+    ${badgesPanel()}
     <div class="panel">
       <h3>Code de la classe</h3>
       <p>Partage-le pour que tes camarades rejoignent le fil.</p>

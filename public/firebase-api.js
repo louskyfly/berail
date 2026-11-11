@@ -204,8 +204,13 @@
       const raw = (await listPosts(u.classCode)).sort((a, b) => b.createdAt.localeCompare(a.createdAt)).slice(0, 400);
       const posts = await Promise.all(raw.map((p) => postView(p, u)));
       const mine = posts.find((p) => p.mine && dayKey(new Date(p.createdAt)) === dayKey());
-      const profiles = (await get(`profiles/${u.classCode}`)) || {};
-      return { klass: klassView(k), posts, profiles, myPostId: mine ? mine.id : null, purgeHour: PURGE_HOUR, retentionDays: RETENTION_DAYS, serverTime: Date.now() };
+      const [profiles, stats, momentDays] = await Promise.all([
+        get(`profiles/${u.classCode}`), get(`stats/${u.classCode}`), get(`momentDays/${u.classCode}`)]);
+      const md = momentDays || {};
+      if (k.moment && dayKey(new Date(k.moment.at)) === dayKey() && !md[dayKey()]) {
+        md[dayKey()] = true; put(`momentDays/${u.classCode}/${dayKey()}`, true).catch(() => {});
+      }
+      return { klass: klassView(k), posts, profiles: profiles || {}, stats: stats || {}, momentDays: md, today: dayKey(), myPostId: mine ? mine.id : null, purgeHour: PURGE_HOUR, retentionDays: RETENTION_DAYS, serverTime: Date.now() };
     }
 
     if (method === 'POST' && route === '/api/moment') {
@@ -265,6 +270,19 @@
       await put(`posts/${u.classCode}/${p.id}`, p);
       await put(`shares/${p.shareCode}`, { classCode: u.classCode, postId: p.id });
       photoCache.set(p.id, photo);
+      // Séries et badges : on garde un jour par BeRail (au-delà des 7 jours)
+      try {
+        const today = dayKey();
+        if (k.moment && dayKey(new Date(k.moment.at)) === today) {
+          const mineDay = await get(`stats/${u.classCode}/${u.id}/days/${today}`);
+          if (!mineDay) {
+            const others = (await listPosts(u.classCode)).filter((x) => x.id !== p.id && x.userId !== u.id && Date.parse(x.createdAt) >= k.moment.at);
+            const status = p.late ? 'late' : (others.length ? 'ok' : 'first');
+            await patch(`stats/${u.classCode}/${u.id}`, { name: u.name, [`days/${today}`]: status });
+            await put(`momentDays/${u.classCode}/${today}`, true);
+          }
+        }
+      } catch (_) {}
       return { post: await postView(p, u) };
     }
 

@@ -301,3 +301,52 @@ button{font:inherit;color:inherit;background:none;border:0;padding:0;cursor:poin
 
 /* variables de marque par défaut (les thèmes les remplacent) */
 :root{--brand:#111113;--brand-2:#111113;--brand-soft:#efefec;--grad:linear-gradient(135deg,#111113,#111113)}
+
+/* ── Séries, badges, récap ── */
+.streak{display:inline-flex;align-items:center;margin-left:6px;font-size:12px;font-weight:800;padding:1px 7px;border-radius:999px;background:rgba(255,140,40,.2);color:#ffb26b;vertical-align:1px}
+.story{position:relative}
+.story .streak{position:absolute;top:40px;right:-4px;margin:0;font-size:10.5px;padding:1px 5px;background:var(--bg);color:var(--fg);border:1px solid var(--line-strong)}
+.post-head .streak,.rc-who .streak{color:#ffb26b}
+.badges{display:grid;grid-template-columns:repeat(auto-fill,minmax(96px,1fr));gap:8px}
+.badge{display:flex;flex-direction:column;align-items:center;text-align:center;gap:2px;padding:12px 6px;border-radius:14px;background:var(--surface-2);opacity:.55}
+.badge .b-icon{font-size:28px;filter:grayscale(1);line-height:1.1}
+.badge b{font-size:12.5px}
+.badge small{font-size:11px;color:var(--muted)}
+.badge.got{opacity:1;box-shadow:inset 0 0 0 1.5px var(--fg)}
+.badge.got .b-icon{filter:none}
+.recap-card{display:flex;align-items:center;gap:12px;width:100%;text-align:left;margin:0 0 16px;padding:12px 14px;border-radius:var(--radius);background:var(--surface);border:1px solid var(--line-strong)}
+.recap-card b{display:block;font-size:15px}.recap-card small{color:var(--muted);font-size:12.5px}
+.recap-play{width:40px;height:40px;flex:none;border-radius:50%;display:flex;align-items:center;justify-content:center;background:var(--primary);color:var(--primary-fg);font-size:14px}
+.modal.modal-full{padding:0;background:#000}
+.recap{position:relative;width:100%;height:100dvh;max-width:560px;background:#000;color:#fff;overflow:hidden}
+.rc-bars{position:absolute;top:calc(10px + var(--safe-t));left:10px;right:10px;z-index:5;display:flex;gap:4px}
+.rc-bars i{flex:1;height:3px;border-radius:2px;background:rgba(255,255,255,.3);overflow:hidden}
+.rc-bars i b{display:block;height:100%;width:0;background:#fff}
+.rc-bars i.done b{width:100%}
+.rc-bars i.run b{animation:rcbar 3.5s linear forwards}
+@keyframes rcbar{to{width:100%}}
+.rc-close{position:absolute;top:calc(22px + var(--safe-t));right:12px;z-index:7;width:38px;height:38px;border-radius:50%;background:rgba(0,0,0,.45);color:#fff;font-size:16px}
+.rc-stage{position:absolute;inset:0}
+.rc-slide{position:absolute;inset:0;opacity:0;transition:opacity .35s;pointer-events:none}
+.rc-slide.on{opacity:1;pointer-events:auto}
+.rc-slide .rc-img{width:100%;height:100%;object-fit:cover;display:block}
+.rc-cap{position:absolute;left:0;right:0;bottom:0;padding:60px 18px calc(28px + var(--safe-b));background:linear-gradient(transparent,rgba(0,0,0,.75))}
+.rc-who{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+.rc-who b{font-size:17px}.rc-who span:last-child{opacity:.8;font-size:13px;width:100%}
+.rc-cap p{margin:8px 0 0;font-size:17px;font-weight:600}
+.rc-nav{position:absolute;top:70px;bottom:120px;z-index:4;width:40%}
+.rc-prev{left:0}.rc-next{right:0;width:60%}
+.rc-end{display:flex;align-items:center;justify-content:center;background:var(--bg);color:var(--fg)}
+.rc-end .rc-nav{display:none}
+.rc-endin{width:100%;max-width:400px;padding:24px;display:flex;flex-direction:column;gap:12px;position:relative;z-index:6}
+.rc-kicker{margin:0;font-size:13px;font-weight:700;text-transform:uppercase;letter-spacing:.1em;color:var(--muted)}
+.rc-big{font-size:84px;font-weight:900;letter-spacing:-.05em;line-height:.9}
+.rc-big small{font-size:22px;font-weight:700;margin-left:8px;letter-spacing:0}
+.rc-endin ul{list-style:none;margin:6px 0 10px;padding:0;display:flex;flex-direction:column;gap:10px;font-size:16px}
+.rc-endin li span{display:inline-block;width:30px}
+.recap.at-end .rc-bars i{background:color-mix(in srgb,var(--fg) 20%,transparent)}
+.recap.at-end .rc-bars i b{background:var(--fg)}
+.recap.at-end .rc-close{background:var(--surface-2);color:var(--fg)}
+.rc-cap{padding-bottom:calc(44px + var(--safe-b))}
+.toast{z-index:120}
+.stat .st-ico{-webkit-text-fill-color:initial;margin-right:4px}

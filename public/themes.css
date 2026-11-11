@@ -145,3 +145,6 @@ html[data-theme="foret"]{
 [data-theme="edito"] .theme-opt,[data-theme="edito"] .theme-opt .sw{border-radius:0}
 [data-theme="foret"] .empty-icon{color:#e6d8b8;-webkit-text-fill-color:initial;background:none}
 [data-theme="ardoise"] .empty-icon,[data-theme="edito"] .empty-icon{background:none}
+[data-theme="edito"] .theme-opt{border-width:1px}
+[data-theme="edito"] .theme-opt.on{border-width:3px;background:#0e0e0e;color:#fafaf7}
+[data-theme="edito"] .theme-opt.on small{color:#cfcfc8}
