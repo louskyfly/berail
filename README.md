@@ -14,6 +14,15 @@ Les élèves entrent un prénom et le code de la classe, et c'est parti.
 |---|---|
 | ![Profil](docs/screens/profil.png) | ![Partage](docs/screens/partage.png) |
 
+## En ligne sur Firebase
+
+L'app tourne sur **https://berail-lucas.web.app** (Firebase Hosting, projet `sync-3626f`).
+Les données (classes, comptes, BeRail, photos, réactions, commentaires) sont dans
+Firebase Realtime Database sous le nœud `/berail`, via `public/firebase-api.js` :
+plus besoin du serveur Node ni de Render. Les photos sont toujours effacées chaque soir à 23h.
+
+Règles de sécurité du nœud `/berail` : `database.rules.berail.json` (à fusionner dans les règles du projet).
+
 ## Lancer
 
 ```bash

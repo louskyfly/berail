@@ -1,11 +1,8 @@
 'use strict';
 /* BeRail — client (vanilla JS) */
 
-const API = (p, opts) => fetch(p, opts).then(async (r) => {
-  const data = await r.json().catch(() => ({}));
-  if (!r.ok) { const e = new Error(data.error || 'error'); e.data = data; e.status = r.status; throw e; }
-  return data;
-});
+/* Données : Firebase Realtime Database (voir firebase-api.js) */
+const API = (p, opts) => window.BerailAPI(p, opts);
 const $ = (s, el = document) => el.querySelector(s);
 const $$ = (s, el = document) => [...el.querySelectorAll(s)];
 const esc = (s) => String(s == null ? '' : s).replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
@@ -545,7 +542,7 @@ function compose(back, front) {
   x.restore();
   x.lineWidth = 7; x.strokeStyle = '#fff';
   roundRect(x, fx, fy, fw, fh, r); x.stroke();
-  return c.toDataURL('image/jpeg', 0.85);
+  return c.toDataURL('image/jpeg', 0.8);
 }
 function drawCover(ctx, src, x, y, w, h) {
   const iw = src.width, ih = src.height;
