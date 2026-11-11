@@ -6,7 +6,7 @@ self.addEventListener('push', (e) => {
   try { d = e.data ? e.data.json() : {}; } catch (_) { d = { body: e.data && e.data.text() }; }
   e.waitUntil(self.registration.showNotification(d.title || 'BeRail', {
     body: d.body || '', icon: '/icon-180.png', badge: '/icon-180.png',
-    tag: d.tag || 'berail', renotify: true, data: { url: d.url || '/' }
+    tag: d.tag || ('berail-' + Date.now()), data: { url: d.url || '/' }
   }));
 });
 self.addEventListener('notificationclick', (e) => {

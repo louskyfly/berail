@@ -61,7 +61,7 @@ function plannedMin(code, s, day) {
 /* ---------- notifications ---------- */
 async function pushClass(code, payload, onlyUserId) {
   const subs = (await get(`push/${code}`)) || {};
-  let sent = 0, gone = 0;
+  let sent = 0, gone = 0, failed = 0, err = '';
   await Promise.all(Object.entries(subs).map(async ([userId, s]) => {
     if (onlyUserId && userId !== onlyUserId) return;
     try {
@@ -70,16 +70,24 @@ async function pushClass(code, payload, onlyUserId) {
       sent++;
     } catch (e) {
       if (e.statusCode === 404 || e.statusCode === 410) { gone++; await del(`push/${code}/${userId}`).catch(() => {}); }
-      else console.error('push', code, userId, e.statusCode, e.body);
+      else { failed++; err = String(e.statusCode || e.message || e).slice(0, 120); console.error('push', code, userId, e.statusCode, e.body); }
     }
   }));
-  return { sent, gone };
+  return { sent, gone, failed, err };
 }
-const MOMENT_MSG = { title: "⚡ C'est l'heure du BeRail !", body: 'Tu as 2 minutes pour poster ta photo.', url: SITE + '/' };
+const VERSION = '2026-11-11b';
+const momentMsg = () => ({ title: "⚡ C'est l'heure du BeRail !", body: 'Tu as 2 minutes pour poster ta photo.', url: SITE + '/', tag: 'moment-' + Date.now() });
 
 async function fireMoment(code, by = 'BeRail') {
   await put(`classes/${code}/moment`, { at: Date.now(), by });
-  return pushClass(code, MOMENT_MSG);
+  const r = await pushClass(code, momentMsg());
+  // les 2 minutes partent de l'arrivée de la notification
+  await put(`classes/${code}/moment`, { at: Date.now(), by });
+  await logPush(code, 'moment', r);
+  return r;
+}
+async function logPush(code, kind, r) {
+  await put(`pushlog/${code}`, { at: new Date().toISOString(), kind, sent: r.sent, gone: r.gone, failed: r.failed || 0, err: r.err || '' }).catch(() => {});
 }
 
 /* ---------- tâche régulière ---------- */
@@ -133,7 +141,7 @@ function checkKey(k) {
   return ok;
 }
 async function overview() {
-  const [classes, users, posts, push, schedules, fired] = await Promise.all(['classes', 'users', 'posts', 'push', 'schedules', 'fired'].map((p) => get(p)));
+  const [classes, users, posts, push, schedules, fired, pushlog] = await Promise.all(['classes', 'users', 'posts', 'push', 'schedules', 'fired', 'pushlog'].map((p) => get(p)));
   const now = parisNow();
   return Object.values(classes || {}).map((k) => {
     const members = Object.entries(users || {}).filter(([, u]) => u && u.classCode === k.code)
@@ -145,7 +153,7 @@ async function overview() {
     return {
       code: k.code, name: k.name, ownerName: k.ownerName, owner: k.owner, createdAt: k.createdAt, moment: k.moment || null,
       members, posts: ps.map((p) => ({ id: p.id, userName: p.userName, caption: p.caption || '', createdAt: p.createdAt, late: !!p.late, shareCode: p.shareCode })),
-      subs: Object.keys((push || {})[k.code] || {}).length,
+      subs: Object.keys((push || {})[k.code] || {}).length, lastPush: (pushlog || {})[k.code] || null,
       schedule: s, today: s && s.enabled && String(s.days || '').includes(String(now.wd)) ? { at: fmtMin(at), done: (fired || {})[k.code] === now.day } : null
     };
   });
@@ -170,7 +178,7 @@ async function adminAction(b) {
       const title = String(b.title || 'BeRail').slice(0, 60), body = String(b.body || '').slice(0, 180);
       const codes = code === '*' ? Object.keys((await get('classes')) || {}) : [code];
       const res = {};
-      for (const c of codes) res[c] = await pushClass(c, { title, body, url: SITE + '/' });
+      for (const c of codes) { res[c] = await pushClass(c, { title, body, url: SITE + '/', tag: 'msg-' + Date.now() }); await logPush(c, 'message', res[c]); }
       return res;
     }
     case 'createClass': {
@@ -201,7 +209,7 @@ async function adminAction(b) {
     case 'deleteClass': {
       if (!CODE.test(code)) throw 400;
       const [posts, users] = await Promise.all([get(`posts/${code}`), get('users')]);
-      const upd = { [`classes/${code}`]: null, [`posts/${code}`]: null, [`push/${code}`]: null, [`schedules/${code}`]: null, [`fired/${code}`]: null };
+      const upd = { [`classes/${code}`]: null, [`pushlog/${code}`]: null, [`posts/${code}`]: null, [`push/${code}`]: null, [`schedules/${code}`]: null, [`fired/${code}`]: null };
       for (const p of Object.values(posts || {})) { upd[`photos/${p.id}`] = null; upd[`shares/${p.shareCode}`] = null; }
       for (const [t, u] of Object.entries(users || {})) if (u && u.classCode === code) upd[`users/${t}`] = null;
       await patch('', upd);
@@ -225,19 +233,20 @@ const server = http.createServer(async (req, res) => {
   if (req.method === 'OPTIONS') return send(res, 204, {});
   const url = new URL(req.url, 'http://x');
   try {
-    if (req.method === 'GET' && (url.pathname === '/' || url.pathname === '/health')) return send(res, 200, { ok: true, service: 'berail-push' });
+    if (req.method === 'GET' && (url.pathname === '/' || url.pathname === '/health')) return send(res, 200, { ok: true, service: 'berail-push', version: VERSION });
     if (req.method === 'GET' && url.pathname === '/tick') return send(res, 200, await tick());
     if (req.method !== 'POST') return send(res, 404, { error: 'not_found' });
     const b = await readBody(req);
     if (url.pathname === '/moment' || url.pathname === '/test') {
       const u = /^[a-f0-9]{32}$/.test(b.token || '') ? await get(`users/${b.token}`) : null;
       if (!u) return send(res, 401, { error: 'bad_token' });
-      if (url.pathname === '/test') return send(res, 200, await pushClass(u.classCode, { title: 'BeRail 🔔', body: 'Les notifications marchent sur cet appareil !', url: SITE + '/' }, u.id));
+      if (url.pathname === '/test') return send(res, 200, await pushClass(u.classCode, { title: 'BeRail 🔔', body: 'Les notifications marchent sur cet appareil !', url: SITE + '/', tag: 'test-' + Date.now() }, u.id));
       const k = await get(`classes/${u.classCode}`);
       if (!k || k.owner !== u.id) return send(res, 403, { error: 'owner_only' });
-      const m = k.moment;
-      if (!m || Date.now() - m.at > 30000) await put(`classes/${u.classCode}/moment`, { at: Date.now(), by: u.name });
-      return send(res, 200, await pushClass(u.classCode, MOMENT_MSG));
+      const r = await pushClass(u.classCode, momentMsg());
+      await put(`classes/${u.classCode}/moment`, { at: Date.now(), by: u.name });
+      await logPush(u.classCode, 'moment', r);
+      return send(res, 200, r);
     }
     if (url.pathname === '/admin') {
       if (!checkKey(b.key)) return send(res, 401, { error: 'bad_key' });

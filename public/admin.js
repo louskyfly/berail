@@ -98,6 +98,7 @@ function classCard(c) {
       <span class="chip">🔔 <b>${c.subs}</b> notifs</span>
       <span class="chip">📸 <b>${c.posts.length}</b> BeRail (7 j)</span>
       <span class="chip">⭐ ${esc(c.ownerName || '—')}</span>
+      ${c.lastPush ? `<span class="chip">Dernière notif : ${esc(fdate(c.lastPush.at))} · ${c.lastPush.sent} reçue${c.lastPush.sent > 1 ? 's' : ''}${c.lastPush.failed ? ` · ${c.lastPush.failed} échec` : ''}</span>` : ''}
       ${momentOn ? '<span class="chip" style="color:#ffe98a">⚡ moment en cours</span>' : ''}
     </div>
     <div class="linkrow"><code>${esc(invite)}</code><button class="btn btn-ghost btn-sm" data-copy="${esc(invite)}">Lien d'invitation</button></div>
