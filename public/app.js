@@ -250,10 +250,13 @@ function postCard(p) {
     `<div class="comment"><b>${esc(c.name)}</b> ${esc(c.text)}</div>`).join('');
   const more = p.commentCount > 3 ? `<div class="comment more">+ ${p.commentCount - 3} autre${p.commentCount - 3 > 1 ? 's' : ''} commentaire${p.commentCount - 3 > 1 ? 's' : ''}</div>` : '';
   const left = daysLeft(p.createdAt);
+  const locked = isLocked(p);
 
-  return `<article class="post ${p.mine ? 'mine' : ''}" data-post="${p.id}">
-    <div class="post-media">
+  return `<article class="post ${p.mine ? 'mine' : ''} ${locked ? 'locked' : ''}" data-post="${p.id}">
+    <div class="post-media ${p.flip && !locked ? 'can-flip' : ''}" ${p.flip && !locked ? `data-flip="${p.id}" role="button" tabindex="0" aria-pressed="false" aria-label="Retourner la photo de ${esc(p.userName)}"` : ''}>
       ${imgTag(p, 'BeRail de ' + p.userName)}
+      ${locked ? `<div class="lock-veil"><span class="lock-ico">🔒</span><b>Poste ton BeRail pour voir</b><button class="btn btn-primary" data-act="unlock">Prendre mon BeRail</button></div>` : ''}
+
       <div class="media-top">
         ${avatarHTML(p.userName, p.userId)}
         <div class="post-who">
@@ -261,15 +264,16 @@ function postCard(p) {
           <span>${hhmm(p.createdAt)} · ${left <= 1 ? "s'efface ce soir" : `encore ${left} j`}${p.late ? '<span class="badge-late">En retard</span>' : ''}</span>
         </div>
       </div>
-      <div class="media-actions">
+      <div class="media-actions" ${locked ? 'hidden' : ''}>
+        ${p.flip ? `<button class="glass-btn flip-btn" data-act="flip" data-post="${p.id}" aria-label="Retourner la photo">⇄</button>` : ''}
         <button class="glass-btn" data-act="download" data-post="${p.id}" aria-label="Télécharger">${ICON.dl}</button>
         <button class="glass-btn" data-act="share" data-post="${p.id}" aria-label="Partager">${ICON.share}</button>
       </div>
     </div>
-    ${p.caption ? `<p class="caption">${esc(p.caption)}</p>` : ''}
-    <div class="reactions">${reactBtns}</div>
-    <div class="comments">${comments}${more}</div>
-    <form class="comment-form" data-act="comment" data-post="${p.id}">
+    ${p.caption && !locked ? `<p class="caption">${esc(p.caption)}</p>` : ''}
+    ${locked ? '' : `<div class="reactions">${reactBtns}</div>
+    <div class="comments">${comments}${more}</div>`}
+    <form ${locked ? 'hidden' : ''} class="comment-form" data-act="comment" data-post="${p.id}">
       <input maxlength="160" placeholder="Ajouter un commentaire…" autocomplete="off">
       <button type="submit" aria-label="Envoyer">↑</button>
     </form>
@@ -361,8 +365,12 @@ async function downloadPost(p) {
 
 /* ---------- interactions feed ---------- */
 document.addEventListener('click', async (e) => {
+  const fl = !e.target.closest('[data-act],button,a') && e.target.closest('[data-flip]');
+  if (fl) { flipPost(fl); return; }
   const btn = e.target.closest('[data-act]');
   if (!btn) return;
+  if (btn.dataset.act === 'unlock') { openCapture(); return; }
+  if (btn.dataset.act === 'flip') { const m = btn.closest('.post-media'); if (m && m.dataset.flip) flipPost(m); return; }
   const act = btn.dataset.act;
   const postId = btn.dataset.post;
   if (act === 'react') {
@@ -705,6 +713,7 @@ async function openCapture() {
   $('#review').classList.add('hidden');
   $('#camError').classList.add('hidden');
   $('#captionInput').value = '';
+  $('#fileBack').value = ''; $('#fileFront').value = '';
   setPhaseUI();
   try { await startCam('environment'); }
   catch (e) { showCamError(); }
@@ -759,13 +768,15 @@ async function shutter() {
 function finishCapture() {
   const front = cap.front || cap.back;
   cap.photo = compose(cap.back, front);
+  cap.hasFlip = !!(cap.front && cap.back && cap.front !== cap.back);
   $('#reviewImg').src = cap.photo;
+  resetStickers();
   $('#reviewLate').classList.toggle('hidden', !(S.moment && Date.now() - S.moment.at > 2 * 60 * 1000));
   $('#review').classList.remove('hidden');
   showScreen('screen-capture');
 }
 
-function compose(back, front) {
+function compose(back, front, asCanvas) {
   const W = 960, H = 1280;
   const c = document.createElement('canvas');
   c.width = W; c.height = H;
@@ -780,7 +791,7 @@ function compose(back, front) {
   x.restore();
   x.lineWidth = 7; x.strokeStyle = '#fff';
   roundRect(x, fx, fy, fw, fh, r); x.stroke();
-  return c.toDataURL('image/jpeg', 0.8);
+  return asCanvas ? c : c.toDataURL('image/jpeg', 0.8);
 }
 function drawCover(ctx, src, x, y, w, h) {
   const iw = src.width, ih = src.height;
@@ -825,9 +836,12 @@ async function publish() {
   btn.disabled = true; btn.textContent = 'Publication…';
   try {
     const caption = $('#captionInput').value.trim();
+    const front = cap.front || cap.back;
+    const main = bakeStickers(compose(cap.back, front, true)).toDataURL('image/jpeg', 0.8);
+    const photoFlip = cap.hasFlip ? bakeStickers(compose(cap.front, cap.back, true)).toDataURL('image/jpeg', 0.72) : '';
     const r = await API('/api/post', {
       method: 'POST', headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ token: S.token, photo: cap.photo, caption })
+      body: JSON.stringify({ token: S.token, photo: main, photoFlip, caption })
     });
     closeCapture();
     await refresh(false);

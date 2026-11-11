@@ -1,5 +1,21 @@
 {
  "rules": {
+  "pushSubs": {
+   ".read": true,
+   "$id": {
+    ".write": "!data.exists() && newData.exists() && $id.length <= 64",
+    ".validate": "newData.hasChildren(['c', 'createdAt'])",
+    "c": {
+     ".validate": "newData.isString() && newData.val().length <= 3000"
+    },
+    "createdAt": {
+     ".validate": "newData.isNumber()"
+    },
+    "$other": {
+     ".validate": false
+    }
+   }
+  },
   "messageFiles": {
    ".read": true,
    "$msgId": {
@@ -1040,6 +1056,9 @@
       },
       "$other": {
        ".validate": false
+      },
+      "flip": {
+       ".validate": "newData.isBoolean()"
       }
      }
     }
@@ -1047,7 +1066,7 @@
    "photos": {
     "$postId": {
      ".read": true,
-     ".write": "$postId.matches(/^[a-f0-9]{16}$/)",
+     ".write": "$postId.matches(/^[a-f0-9]{16}f?$/)",
      ".validate": "newData.isString() && newData.val().beginsWith('data:image/') && newData.val().length <= 1400000"
     }
    },

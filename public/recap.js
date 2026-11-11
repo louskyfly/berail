@@ -92,7 +92,7 @@ function recapStats() {
 
 let recapTimer = null;
 function openRecap() {
-  const posts = [...S.posts].sort((a, b) => a.createdAt.localeCompare(b.createdAt));
+  const posts = S.posts.filter((p) => !isLocked(p)).sort((a, b) => a.createdAt.localeCompare(b.createdAt));
   if (!posts.length) return;
   const st = recapStats();
   const slides = posts.map((p) => `<div class="rc-slide">${imgTag(p, 'BeRail de ' + p.userName, 'rc-img')}

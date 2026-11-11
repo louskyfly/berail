@@ -130,7 +130,7 @@
     const upd = {};
     for (const p of stale) {
       upd[`posts/${code}/${p.id}`] = null;
-      upd[`photos/${p.id}`] = null;
+      upd[`photos/${p.id}`] = null; upd[`photos/${p.id}f`] = null;
       upd[`shares/${p.shareCode}`] = null;
       photoCache.delete(p.id); idbSet(p.id, null);
     }
@@ -150,7 +150,7 @@
       .map((c) => ({ name: c.name, text: c.text, at: c.at }));
     return {
       id: p.id, shareCode: p.shareCode, userName: p.userName, userId: p.userId,
-      photo: photoCache.get(p.id) || '', caption: p.caption || '', late: !!p.late, createdAt: p.createdAt,
+      photo: photoCache.get(p.id) || '', caption: p.caption || '', late: !!p.late, flip: !!p.flip, createdAt: p.createdAt,
       mine: !!(viewer && viewer.id === p.userId),
       reactions, myReaction, reactionTotal: total, comments, commentCount: comments.length
     };
@@ -266,7 +266,10 @@
         late: !!(k.moment && Date.now() - k.moment.at > LATE_MS),
         createdAt: nowIso()
       };
+      const flip = String(body.photoFlip || '');
+      if (/^data:image\/(jpeg|png|webp);base64,/.test(flip) && flip.length <= 1400000) p.flip = true;
       await put(`photos/${p.id}`, photo);
+      if (p.flip) await put(`photos/${p.id}f`, flip);
       await put(`posts/${u.classCode}/${p.id}`, p);
       await put(`shares/${p.shareCode}`, { classCode: u.classCode, postId: p.id });
       photoCache.set(p.id, photo);

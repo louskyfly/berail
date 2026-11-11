@@ -114,7 +114,24 @@
         <span>Ton BeRail</span>
         <span class="review-late hidden" id="reviewLate">⚠️ En retard</span>
       </div>
-      <img id="reviewImg" alt="Aperçu">
+      <div class="review-stage" id="reviewStage">
+        <img id="reviewImg" alt="Aperçu">
+        <div class="stk-layer" id="stkLayer"></div>
+      </div>
+      <div class="stk-bar" id="stkBar">
+        <button class="stk-tool" id="stkText">Aa</button>
+        <div class="stk-emojis" id="stkEmojis"></div>
+        <div class="stk-sel hidden" id="stkSel">
+          <button class="stk-tool" id="stkSmaller" aria-label="Plus petit">−</button>
+          <button class="stk-tool" id="stkBigger" aria-label="Plus grand">+</button>
+          <button class="stk-tool" id="stkDel" aria-label="Supprimer">🗑</button>
+        </div>
+      </div>
+      <div class="stk-textrow hidden" id="stkTextRow">
+        <input id="stkTextIn" maxlength="40" placeholder="Ton texte…" autocomplete="off">
+        <div class="stk-colors" id="stkColors"></div>
+        <button class="stk-tool stk-ok" id="stkTextOk">OK</button>
+      </div>
       <div class="review-foot">
         <input id="captionInput" maxlength="140" placeholder="Ajoute une légende…" autocomplete="off">
         <button class="btn btn-primary" id="publishBtn">Publier</button>
@@ -133,5 +150,6 @@
 <script src="/firebase-api.js"></script>
 <script src="/recap.js"></script>
 <script src="/app.js"></script>
+<script src="/extras.js"></script>
 </body>
 </html>

@@ -350,3 +350,37 @@ button{font:inherit;color:inherit;background:none;border:0;padding:0;cursor:poin
 .rc-cap{padding-bottom:calc(44px + var(--safe-b))}
 .toast{z-index:120}
 .stat .st-ico{-webkit-text-fill-color:initial;margin-right:4px}
+
+/* ── Photo mystère ── */
+.post.locked .post-media img{filter:blur(28px) saturate(1.2);transform:scale(1.15)}
+.lock-veil{position:absolute;inset:0;z-index:3;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:10px;color:#fff;text-align:center;padding:20px;background:rgba(0,0,0,.25)}
+.lock-ico{font-size:34px}
+.lock-veil b{font-size:18px;text-shadow:0 1px 8px rgba(0,0,0,.5)}
+.lock-veil .btn{padding:11px 18px;font-size:14px}
+.post.locked .media-top,.post.locked .comment-form{opacity:.9}
+/* ── Retourner ── */
+.post-media.can-flip{cursor:pointer}
+.post-media img{transition:transform .16s ease,opacity .16s}
+.post-media.flipping img{transform:scaleX(0);opacity:.6}
+.post-media.flipped /* ── Stickers ── */
+.review-stage{position:relative;flex:1;min-height:0;background:#000}
+.review-stage #reviewImg{width:100%;height:100%;object-fit:contain;display:block}
+.stk-layer{position:absolute;touch-action:none;overflow:hidden}
+.stk{position:absolute;transform:translate(-50%,-50%);white-space:nowrap;line-height:1;cursor:grab;user-select:none;-webkit-user-select:none;padding:4px 6px;border-radius:10px}
+.stk.text{font-weight:800;font-family:-apple-system,"Helvetica Neue",Arial,sans-serif;text-shadow:0 0 .18em rgba(0,0,0,.6)}
+.stk.sel{outline:2px dashed rgba(255,255,255,.9);outline-offset:2px}
+.stk-bar{display:flex;align-items:center;gap:8px;padding:10px 14px 0;color:#fff}
+.stk-tool{flex:none;min-width:42px;height:42px;border-radius:12px;background:#1f1f22;color:#fff;font-weight:800;font-size:17px;padding:0 10px}
+.stk-emojis{display:flex;gap:4px;overflow-x:auto;scrollbar-width:none;flex:1}
+.stk-emojis::-webkit-scrollbar{display:none}
+.stk-emojis button{font-size:26px;flex:none;width:42px;height:42px;border-radius:12px}
+.stk-emojis button:active{background:#1f1f22}
+.stk-sel{display:flex;gap:8px;flex:1;justify-content:flex-end}
+.stk-textrow{display:flex;align-items:center;gap:8px;padding:10px 14px 0;flex-wrap:wrap}
+.stk-textrow input{flex:1;min-width:160px;background:#1f1f22;border:1px solid #333337;border-radius:12px;padding:10px 12px;color:#fff;font-size:16px;outline:none}
+.stk-colors{display:flex;gap:6px}
+.stk-colors button{width:26px;height:26px;border-radius:50%;border:2px solid #333}
+.stk-colors button.on{border-color:#fff;box-shadow:0 0 0 2px #000 inset}
+.stk-ok{background:#fff;color:#111}
+.flip-btn{font-size:18px;font-weight:800}
+.post-media.flipped .flip-btn{background:#fff;color:#111}

@@ -122,7 +122,7 @@ async function purgeOld() {
   const upd = {};
   for (const [code, posts] of Object.entries(all)) for (const p of Object.values(posts || {})) {
     if (p && p.createdAt && ageDays(p.createdAt) >= RETENTION_DAYS) {
-      upd[`posts/${code}/${p.id}`] = null; upd[`photos/${p.id}`] = null; if (p.shareCode) upd[`shares/${p.shareCode}`] = null;
+      upd[`posts/${code}/${p.id}`] = null; upd[`photos/${p.id}`] = null; upd[`photos/${p.id}f`] = null; if (p.shareCode) upd[`shares/${p.shareCode}`] = null;
     }
   }
   const n = Object.keys(upd).length;
@@ -203,14 +203,14 @@ async function adminAction(b) {
     case 'deletePost': {
       const p = await get(`posts/${code}/${b.id}`);
       if (!p) throw 404;
-      await patch('', { [`posts/${code}/${p.id}`]: null, [`photos/${p.id}`]: null, [`shares/${p.shareCode}`]: null });
+      await patch('', { [`posts/${code}/${p.id}`]: null, [`photos/${p.id}`]: null, [`photos/${p.id}f`]: null, [`shares/${p.shareCode}`]: null });
       return { ok: true };
     }
     case 'deleteClass': {
       if (!CODE.test(code)) throw 400;
       const [posts, users] = await Promise.all([get(`posts/${code}`), get('users')]);
       const upd = { [`classes/${code}`]: null, [`pushlog/${code}`]: null, [`posts/${code}`]: null, [`push/${code}`]: null, [`profiles/${code}`]: null, [`stats/${code}`]: null, [`momentDays/${code}`]: null, [`schedules/${code}`]: null, [`fired/${code}`]: null };
-      for (const p of Object.values(posts || {})) { upd[`photos/${p.id}`] = null; upd[`shares/${p.shareCode}`] = null; }
+      for (const p of Object.values(posts || {})) { upd[`photos/${p.id}`] = null; upd[`photos/${p.id}f`] = null; upd[`shares/${p.shareCode}`] = null; }
       for (const [t, u] of Object.entries(users || {})) if (u && u.classCode === code) upd[`users/${t}`] = null;
       await patch('', upd);
       return { ok: true };
