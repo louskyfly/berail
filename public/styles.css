@@ -426,3 +426,14 @@ button{font:inherit;color:inherit;background:none;border:0;padding:0;cursor:poin
 .acct-pin code{font-size:16px;font-weight:700;letter-spacing:2px}
 .acct-actions{display:flex;gap:6px;flex-wrap:wrap;justify-content:flex-end}
 .acct-actions .mini-btn.danger{color:var(--danger,#e55)}
+
+/* ---- bouton d'envoi toujours visible (raccourci web iPad) ---- */
+.cap-row{display:flex;gap:10px;align-items:center}
+.cap-row input{flex:1;min-width:0}
+.send-btn{flex:none;width:52px;height:52px;border-radius:50%;border:0;background:#fff;color:#111;font-size:22px;font-weight:700;display:grid;place-items:center;cursor:pointer;box-shadow:0 4px 18px rgba(0,0,0,.35)}
+.send-btn:disabled{opacity:.5}
+.review{top:0;bottom:auto;height:100%}
+.review-head .btn-primary{height:40px;padding:0 18px;font-size:15px}
+.review-stage{min-height:120px}
+@media (max-height:700px){.review-note{display:none}.review-foot #publishBtn{display:none}}
+.consent-screen #consentAccept{position:sticky;bottom:calc(12px + env(safe-area-inset-bottom,0px));z-index:2;box-shadow:0 6px 24px rgba(0,0,0,.35)}

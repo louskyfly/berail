@@ -13,9 +13,9 @@
 <link rel="apple-touch-icon" href="/icon-180.png?v=2">
 <link rel="icon" href="/icon-180.png?v=2">
 <script>(function(){var t=localStorage.getItem('berail.theme')||'ardoise';if(t!=='classique')document.documentElement.setAttribute('data-theme',t);window.__theme=t;})();</script>
-<link rel="stylesheet" href="/styles.css">
-<link rel="stylesheet" href="/classic.css" id="classicCss">
-<link rel="stylesheet" href="/themes.css">
+<link rel="stylesheet" href="/styles.css?v=20261112c">
+<link rel="stylesheet" href="/classic.css?v=20261112c" id="classicCss">
+<link rel="stylesheet" href="/themes.css?v=20261112c">
 <script>if(window.__theme!=='classique')document.getElementById('classicCss').disabled=true;</script>
 </head>
 <body>
@@ -139,7 +139,7 @@
       </div>
       <div class="review-foot">
         <span class="review-late hidden" id="reviewLate">⚠️ En retard</span>
-        <input id="captionInput" maxlength="140" placeholder="Ajoute une légende…" autocomplete="off">
+        <div class="cap-row"><input id="captionInput" maxlength="140" placeholder="Ajoute une légende…" autocomplete="off" enterkeyhint="send"><button type="button" class="send-btn" id="publishSend" aria-label="Publier">➤</button></div>
         <button class="btn btn-primary" id="publishBtn">Publier</button>
         <p class="review-note">Visible par ta classe uniquement.</p>
       </div>
@@ -185,9 +185,9 @@
   <div class="consent-inner stopped-inner"><p class="stopped-text">Cette page n’existe pas.</p></div>
 </div>
 
-<script src="/firebase-api.js?v=20261112b"></script>
-<script src="/recap.js?v=20261112b"></script>
-<script src="/app.js?v=20261112b"></script>
-<script src="/extras.js?v=20261112b"></script>
+<script src="/firebase-api.js?v=20261112c"></script>
+<script src="/recap.js?v=20261112c"></script>
+<script src="/app.js?v=20261112c"></script>
+<script src="/extras.js?v=20261112c"></script>
 </body>
 </html>

@@ -920,6 +920,7 @@ async function publish() {
   const top = $('#publishTop');
   if (btn) { btn.disabled = true; btn.textContent = 'Publication…'; }
   if (top) { top.disabled = true; top.textContent = '…'; }
+  const snd = $('#publishSend'); if (snd) snd.disabled = true;
   try {
     const caption = $('#captionInput').value.trim();
     const front = cap.front || cap.back;
@@ -939,6 +940,7 @@ async function publish() {
     publishing = false;
     if (btn) { btn.disabled = false; btn.textContent = 'Publier'; }
     if (top) { top.disabled = false; top.textContent = 'Publier'; }
+    const snd2 = $('#publishSend'); if (snd2) snd2.disabled = false;
   }
 }
 
@@ -1066,6 +1068,19 @@ $('#shutter').addEventListener('click', shutter);
 $('#retake').addEventListener('click', openCapture);
 $('#publishBtn').addEventListener('click', publish);
 $('#publishTop').addEventListener('click', publish);
+$('#publishSend').addEventListener('click', publish);
+$('#captionInput').addEventListener('keydown', (e) => { if (e.key === 'Enter') { e.preventDefault(); $('#captionInput').blur(); publish(); } });
+/* clavier iPad / raccourci web : l'aperçu suit la zone visible pour que Publier reste à l'écran */
+if (window.visualViewport) {
+  const fitReview = () => {
+    const r = $('#review'); if (!r) return;
+    const vv = window.visualViewport;
+    r.style.height = vv.height + 'px';
+    r.style.transform = vv.offsetTop ? `translateY(${vv.offsetTop}px)` : '';
+  };
+  window.visualViewport.addEventListener('resize', fitReview);
+  window.visualViewport.addEventListener('scroll', fitReview);
+}
 $('#flipCam').addEventListener('click', async () => {
   cap.phase = cap.phase === 'back' ? 'front' : 'back';
   setPhaseUI();
