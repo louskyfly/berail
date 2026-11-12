@@ -161,7 +161,7 @@ async function join(create) {
 }
 
 /* ---------- charte (première ouverture) et site arrêté ---------- */
-const CONSENT_KEY = 'berail.consent.v1';
+const CONSENT_KEY = 'berail.consent.v2';
 function showStopped() {
   screens.forEach((s) => $('#' + s).classList.add('hidden'));
   $('#screen-consent').classList.add('hidden');
@@ -170,18 +170,29 @@ function showStopped() {
 }
 function showConsent() {
   return new Promise((resolve) => {
-    const scr = $('#screen-consent'), chk = $('#consentCheck'), ok = $('#consentAccept'), nb = $('#consentNotifBtn');
-    scr.classList.remove('hidden'); chk.checked = false; ok.disabled = true;
-    chk.onchange = () => { ok.disabled = !chk.checked; };
-    nb.onclick = async () => {
-      try {
-        const st = await notifState().catch(() => 'unsupported');
-        if (st === 'install' || st === 'unsupported') { toast("Sur iPad : ajoute BeRail à l'écran d'accueil pour les notifications"); return; }
-        if (st === 'denied') { toast('Notifications bloquées dans les Réglages'); return; }
-        if (await enableNotifs()) { nb.textContent = '🔔 Notifications activées'; nb.disabled = true; }
-      } catch (_) { toast("Impossible d'activer les notifications"); }
+    const scr = $('#screen-consent'), chk = $('#consentCheck'), ok = $('#consentAccept'), nb = $('#consentNotifBtn'), txt = $('#consentNotifText');
+    let notifOk = false;
+    const sync = () => {
+      ok.disabled = !(chk.checked && notifOk);
+      ok.textContent = notifOk ? 'J’accepte et j’entre' : 'Active d’abord les notifications';
     };
-    ok.onclick = () => { if (!chk.checked) return; localStorage.setItem(CONSENT_KEY, new Date().toISOString()); scr.classList.add('hidden'); resolve(); };
+    const setState = (st) => {
+      if (st === 'on') { notifOk = true; nb.textContent = '🔔 Notifications activées'; nb.disabled = true; txt.textContent = 'C’est bon, tu seras prévenu.'; }
+      else if (st === 'install') { nb.classList.add('hidden'); txt.textContent = 'Obligatoire pour entrer. Sur iPad ou iPhone : touche Partager ⬆︎ puis « Sur l’écran d’accueil », et ouvre BeRail depuis la nouvelle icône.'; }
+      else if (st === 'denied') { nb.classList.add('hidden'); txt.textContent = 'Les notifications sont bloquées. Va dans Réglages → Notifications → BeRail pour les autoriser, puis rouvre BeRail.'; }
+      else if (st === 'unsupported') { notifOk = true; nb.classList.add('hidden'); txt.textContent = 'Ce navigateur ne gère pas les notifications.'; }
+      else { nb.classList.remove('hidden'); nb.disabled = false; }
+      sync();
+    };
+    scr.classList.remove('hidden'); chk.checked = false; sync();
+    notifState().catch(() => 'unsupported').then(setState);
+    chk.onchange = sync;
+    nb.onclick = async () => {
+      nb.disabled = true;
+      try { if (await enableNotifs()) setState('on'); else setState(await notifState().catch(() => 'off')); }
+      catch (_) { toast("Impossible d'activer les notifications"); nb.disabled = false; }
+    };
+    ok.onclick = () => { if (ok.disabled) return; localStorage.setItem(CONSENT_KEY, new Date().toISOString()); scr.classList.add('hidden'); resolve(); };
   });
 }
 async function afterLogin() {
@@ -344,6 +355,7 @@ function postCard(p) {
         ${p.flip ? `<button class="glass-btn flip-btn" data-act="flip" data-post="${p.id}" aria-label="Retourner la photo">⇄</button>` : ''}
         <button class="glass-btn" data-act="download" data-post="${p.id}" aria-label="Télécharger">${ICON.dl}</button>
         <button class="glass-btn" data-act="share" data-post="${p.id}" aria-label="Partager">${ICON.share}</button>
+        ${p.mine || (S.user && S.user.owner) ? `<button class="glass-btn del-btn" data-act="delpost" data-post="${p.id}" aria-label="Supprimer ce BeRail">🗑</button>` : ''}
       </div>
     </div>
     ${p.caption && !locked ? `<p class="caption">${esc(p.caption)}</p>` : ''}
@@ -460,6 +472,18 @@ document.addEventListener('click', async (e) => {
       renderFeed();
       if (S.view === 'memories') renderMemories();
     } catch (_) { toast('Impossible pour le moment'); }
+  }
+  if (act === 'delpost') {
+    const p = S.posts.find((x) => x.id === postId);
+    if (!p || !confirm(p.mine ? 'Supprimer ton BeRail ? Tu pourras en reposter un.' : `Supprimer le BeRail de ${p.userName} ?`)) return;
+    try {
+      await API('/api/post/delete', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ token: S.token, postId }) });
+      S.posts = S.posts.filter((x) => x.id !== postId);
+      if (S.myPostId === postId) S.myPostId = null;
+      await refresh(false); renderFeed(); if (S.view === 'memories') renderMemories();
+      toast('BeRail supprimé');
+    } catch (_) { toast('Suppression impossible'); }
+    return;
   }
   if (act === 'share') {
     const p = S.posts.find((x) => x.id === postId);
@@ -935,6 +959,7 @@ async function publish() {
       body: JSON.stringify({ token: S.token, photo: main, photoFlip, caption })
     });
     closeCapture();
+    pushServer('/posted', { token: S.token, postId: r.post.id });
     await refresh(false);
     setView('feed');
     toast(r.post.late ? 'Publié — mais en retard 😅' : 'BeRail publié ⚡');

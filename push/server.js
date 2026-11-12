@@ -59,11 +59,12 @@ function plannedMin(code, s, day) {
 }
 
 /* ---------- notifications ---------- */
-async function pushClass(code, payload, onlyUserId) {
+async function pushClass(code, payload, onlyUserId, exceptUserId) {
   const subs = (await get(`push/${code}`)) || {};
   let sent = 0, gone = 0, failed = 0, err = '';
   await Promise.all(Object.entries(subs).map(async ([userId, s]) => {
     if (onlyUserId && userId !== onlyUserId) return;
+    if (exceptUserId && userId === exceptUserId) return;
     try {
       await webpush.sendNotification({ endpoint: s.endpoint, keys: { p256dh: s.p256dh, auth: s.auth } },
         JSON.stringify(payload), { TTL: 900, urgency: 'high' });
@@ -75,7 +76,8 @@ async function pushClass(code, payload, onlyUserId) {
   }));
   return { sent, gone, failed, err };
 }
-const VERSION = '2026-11-11c';
+const VERSION = '2026-11-12a';
+const postedSent = new Set();
 const momentMsg = () => ({ title: "⚡ C'est l'heure du BeRail !", body: 'Tu as 2 minutes pour poster ta photo.', url: SITE + '/', tag: 'moment-' + Date.now() });
 
 async function fireMoment(code, by = 'BeRail') {
@@ -246,6 +248,18 @@ const server = http.createServer(async (req, res) => {
       const r = await pushClass(u.classCode, momentMsg());
       await put(`classes/${u.classCode}/moment`, { at: Date.now(), by: u.name });
       await logPush(u.classCode, 'moment', r);
+      return send(res, 200, r);
+    }
+    if (url.pathname === '/posted') {
+      const u = /^[a-f0-9]{32}$/.test(b.token || '') ? await get(`users/${b.token}`) : null;
+      if (!u) return send(res, 401, { error: 'bad_token' });
+      const id = String(b.postId || '');
+      if (!/^[a-f0-9]{16}$/.test(id) || postedSent.has(id)) return send(res, 200, { skipped: true });
+      const p = await get(`posts/${u.classCode}/${id}`);
+      if (!p || p.userId !== u.id || Date.now() - Date.parse(p.createdAt) > 10 * 60 * 1000) return send(res, 200, { skipped: true });
+      postedSent.add(id); if (postedSent.size > 5000) postedSent.clear();
+      const r = await pushClass(u.classCode, { title: `📸 ${u.name} a posté son BeRail`, body: p.caption ? String(p.caption).slice(0, 80) : 'Va voir sa photo !', url: SITE + '/', tag: 'post-' + id }, null, u.id);
+      await logPush(u.classCode, 'post', r).catch(() => {});
       return send(res, 200, r);
     }
     if (url.pathname === '/admin') {

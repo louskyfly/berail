@@ -296,6 +296,16 @@
       try { const today = dayKey(); if (k.moment && dayKey(new Date(k.moment.at)) === today) { const mineDay = await get(`stats/${u.classCode}/${u.id}/days/${today}`); if (!mineDay) { const others = (await listPosts(u.classCode)).filter((x) => x.id !== p.id && x.userId !== u.id && Date.parse(x.createdAt) >= k.moment.at); const status = p.late ? 'late' : (others.length ? 'ok' : 'first'); await patch(`stats/${u.classCode}/${u.id}`, { name: u.name, [`days/${today}`]: status }); await put(`momentDays/${u.classCode}/${today}`, true); } } } catch (_) {}
       return { post: await postView(p, u) };
     }
+    if (method === 'POST' && route === '/api/post/delete') {
+      const u = await userFromToken(body.token); const k = await klassOf(u.classCode);
+      const id = String(body.postId || ''); if (!/^[a-f0-9]{16}$/.test(id)) fail(404, 'not_found');
+      const p = await get(`posts/${u.classCode}/${id}`); if (!p) return { ok: true };
+      if (p.userId !== u.id && !(k.owner === u.id || u.role === 'admin')) fail(403, 'not_yours');
+      await del(`photos/${id}`).catch(() => {}); await del(`photos/${id}f`).catch(() => {});
+      if (p.shareCode) await del(`shares/${p.shareCode}`).catch(() => {});
+      await del(`posts/${u.classCode}/${id}`); photoCache.delete(id);
+      return { ok: true };
+    }
     if (method === 'POST' && route === '/api/react') {
       const u = await userFromToken(body.token); const pathP = `posts/${u.classCode}/${body.postId}`; const p = await get(pathP); if (!p) fail(404, 'not_found');
       const emoji = String(body.emoji || '').slice(0, 4); const already = (p.reactions || {})[u.id] === emoji; await put(`${pathP}/reactions/${u.id}`, already ? null : emoji);
