@@ -119,6 +119,10 @@ function authMode(m) {
   $$('.auth-tabs button').forEach((b) => b.classList.toggle('on', b.dataset.tab === m));
   $('#joinBtn').textContent = m === 'login' ? 'Se connecter' : 'Créer mon compte';
   $('#inPass').autocomplete = m === 'login' ? 'current-password' : 'new-password';
+  $('#inPass').inputMode = m === 'login' ? 'text' : 'numeric';
+  $('#inPass').maxLength = m === 'login' ? 64 : 4;
+  $('#inPass').placeholder = m === 'login' ? 'Ton mot de passe ou ton code' : '4 chiffres';
+  if ($('#passLabel')) $('#passLabel').textContent = m === 'login' ? 'Mot de passe ou code' : 'Code à 4 chiffres';
   const reg = m === 'register';
   $$('.reg-only').forEach((el) => el.classList.toggle('hidden', !reg));
   const code = $('#inCode'); if (code) code.required = reg;
@@ -127,7 +131,7 @@ function authMode(m) {
 }
 async function join(create) {
   const mode = $('#joinForm').dataset.mode;
-  const pseudo = $('#inPseudo').value.trim(), password = $('#inPass').value.trim();
+  const pseudo = $('#inPseudo').value.trim(), password = $('#inPass').value;
   const code = $('#inCode').value.trim().toUpperCase();
   const name = ($('#inName') && $('#inName').value.trim()) || pseudo;
   const err = $('#authError');

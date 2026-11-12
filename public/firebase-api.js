@@ -183,11 +183,22 @@
 
     if (method === 'POST' && route === '/api/login-pin') {
       const un = normUser(body.username); const pin = String(body.pin || '').trim();
-      if (!validUsername(un) || !validPin(pin)) fail(401, 'bad_login');
-      const a = await get(`logins/${loginKey(un, pin)}`);
-      if (!a || !a.t) fail(401, 'bad_login');
-      meCache = null; const u = await userFromToken(a.t).catch(() => fail(410, 'account_gone'));
-      const k = await klassOf(u.classCode); return { token: a.t, user: publicUser(u, k), klass: klassView(k) };
+      let tok = null;
+      if (validUsername(un) && validPin(pin)) { const a = await get(`logins/${loginKey(un, pin)}`).catch(() => null); if (a && a.t) tok = a.t; }
+      if (!tok) {
+        /* anciens comptes : pseudo + mot de passe en lettres (jeton chiffré AES-GCM, clé PBKDF2) */
+        const old = await get(`accounts/${String(body.username || '').trim().replace(/^@/, '').toLowerCase().replace(/\./g, '~')}`).catch(() => null);
+        if (old && old.enc && old.salt && old.iv) {
+          try {
+            const base = await crypto.subtle.importKey('raw', new TextEncoder().encode(String(body.pin || '')), 'PBKDF2', false, ['deriveKey']);
+            const key = await crypto.subtle.deriveKey({ name: 'PBKDF2', salt: unb64(old.salt), iterations: 210000, hash: 'SHA-256' }, base, { name: 'AES-GCM', length: 256 }, false, ['decrypt']);
+            tok = new TextDecoder().decode(await crypto.subtle.decrypt({ name: 'AES-GCM', iv: unb64(old.iv) }, key, unb64(old.enc)));
+          } catch (_) { tok = null; }
+        }
+      }
+      if (!tok) fail(401, 'bad_login');
+      meCache = null; const u = await userFromToken(tok).catch(() => fail(410, 'account_gone'));
+      const k = await klassOf(u.classCode); return { token: tok, user: publicUser(u, k), klass: klassView(k) };
     }
 
     if (route === '/api/admin/accounts' && method === 'GET') {
