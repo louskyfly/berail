@@ -89,15 +89,52 @@
   function genPin() { return String(1000 + Math.floor(Math.random() * 9000)); }
   function validPin(pin) { return /^\d{4}$/.test(String(pin || '').trim()); }
   function validUsername(u) { return /^[a-z0-9_~-]{2,20}$/.test(normUser(u)); }
-  async function findAccount(un) { const a = await get(`accounts/${un}`); return a && a.token ? a : null; }
-  async function listClassAccounts(code) {
-    const usersObj = (await get(`usersByClass/${code}`)) || {};
-    const rows = [];
-    for (const tok of Object.keys(usersObj)) {
-      const u = await get(`users/${tok}`);
-      if (!u) continue;
-      const acc = u.usernameNorm ? await get(`accounts/${u.usernameNorm}`) : null;
-      rows.push({ id: u.id, token: tok, name: u.name, username: u.username || null, pin: acc ? (acc.pin || '') : (u.pin || ''), role: u.role || 'student', createdAt: u.createdAt || null });
+  async function findAccount(un) { return !!(await get(`accounts/${un}`)); }
+  /* Sécurité : les codes ne sont jamais stockés en clair.
+     - logins/{identifiant}_{code} -> { t: jeton } : on ne peut lire que si on connaît le bon couple (liste interdite).
+     - rosterEnc/{classe}/{userId} : fiche chiffrée (RSA-OAEP) avec la clé publique de la classe ; seule la clé privée,
+       rangée dans la fiche du prof (users/{jeton du prof}.rk), permet de la lire.
+     - proofs/{userId} : preuve d'être le prof (son jeton), exigée par les règles pour arrêter le site ou gérer les comptes. */
+  const RSA = { name: 'RSA-OAEP', hash: 'SHA-256' };
+  const b64 = (buf) => btoa(String.fromCharCode(...new Uint8Array(buf)));
+  const unb64 = (s) => Uint8Array.from(atob(s), (c) => c.charCodeAt(0));
+  async function newClassKeys() {
+    const kp = await crypto.subtle.generateKey({ ...RSA, modulusLength: 2048, publicExponent: new Uint8Array([1, 0, 1]) }, true, ['encrypt', 'decrypt']);
+    return { pub: JSON.stringify(await crypto.subtle.exportKey('jwk', kp.publicKey)), priv: JSON.stringify(await crypto.subtle.exportKey('jwk', kp.privateKey)) };
+  }
+  async function sealEntry(pubJson, e) {
+    const key = await crypto.subtle.importKey('jwk', JSON.parse(pubJson), RSA, false, ['encrypt']);
+    let n = String(e.n || ''); let raw;
+    do { raw = new TextEncoder().encode(JSON.stringify({ u: e.u, n, p: e.p || '', t: e.t, r: e.r || 'student' })); n = n.slice(0, -1); } while (raw.length > 190 && n);
+    return b64(await crypto.subtle.encrypt(RSA, key, raw));
+  }
+  async function openEntries(privJson, obj) {
+    const key = await crypto.subtle.importKey('jwk', JSON.parse(privJson), RSA, false, ['decrypt']);
+    const out = {};
+    for (const [id, c] of Object.entries(obj || {})) { try { out[id] = JSON.parse(new TextDecoder().decode(await crypto.subtle.decrypt(RSA, key, unb64(c)))); } catch (_) {} }
+    return out;
+  }
+  const proof = (u, token) => ({ [`proofs/${u.id}`]: { k: token, at: { '.sv': 'timestamp' } } });
+  const loginKey = (un, pin) => `${un}_${pin}`;
+  async function createAccount({ username, pin, name, classCode, role, k, extra }) {
+    const un = normUser(username); const token = uid(16); const userId = uid(6);
+    const user = Object.assign({ id: userId, name, username, usernameNorm: un, classCode, role, createdAt: nowIso() }, extra || {});
+    await put(`users/${token}`, user);
+    await put(`accounts/${un}`, { username, usernameNorm: un, userId, classCode, role, name, createdAt: nowIso() });
+    await put(`logins/${loginKey(un, pin)}`, { t: token });
+    if (k && k.pub) await put(`rosterEnc/${classCode}/${userId}`, await sealEntry(k.pub, { u: username, n: name, p: pin, t: token, r: role })).catch(() => {});
+    return { token, user };
+  }
+  async function roster(me, meToken) {
+    if (!me.rk) fail(403, 'no_key');
+    const entries = await openEntries(me.rk, await get(`rosterEnc/${me.classCode}`));
+    return entries;
+  }
+  async function listClassAccounts(me, meToken) {
+    const entries = await roster(me, meToken); const rows = [];
+    for (const [id, e] of Object.entries(entries)) {
+      const u = await get(`users/${e.t}`); if (!u) continue;
+      rows.push({ id, token: e.t, name: u.name, username: e.u || u.username || null, pin: e.p || '', role: u.role || e.r || 'student', createdAt: u.createdAt || null });
     }
     rows.sort((a, b) => (a.role === 'admin' ? -1 : 1) - (b.role === 'admin' ? -1 : 1) || String(a.name).localeCompare(String(b.name)));
     return rows;
@@ -113,12 +150,12 @@
     if (method === 'POST' && route === '/api/admin/stop') {
       const u = await userFromToken(body.token); const k = await klassOf(u.classCode);
       if (!(k.owner === u.id || u.role === 'admin')) fail(403, 'owner_only');
-      await put('site/stopped', { at: nowIso(), by: u.id }); stoppedCache = true; return { ok: true };
+      await patch('', Object.assign({ site: { stopped: { at: nowIso(), by: u.id }, by: u.id } }, proof(u, body.token))); stoppedCache = true; return { ok: true };
     }
     if (method === 'POST' && route === '/api/admin/unstop') {
       const u = await userFromToken(body.token); const k = await klassOf(u.classCode);
       if (!(k.owner === u.id || u.role === 'admin')) fail(403, 'owner_only');
-      await put('site/stopped', null); stoppedCache = false; return { ok: true };
+      await patch('', Object.assign({ site: { by: u.id } }, proof(u, body.token))); stoppedCache = false; return { ok: true };
     }
 
     if (method === 'POST' && route === '/api/setup') {
@@ -129,28 +166,34 @@
       if (!/^[A-Z0-9-]{3,12}$/.test(classCode)) fail(400, 'bad_code');
       if (await findAccount(un)) fail(409, 'username_taken');
       let k = await get(`classes/${classCode}`);
-      const token = uid(16); const userId = uid(6);
       const name = cleanName(body.name || username) || username;
-      const role = k && k.owner ? 'student' : 'admin';
-      if (!k) { k = { code: classCode, name: classCode, owner: userId, ownerName: name, createdAt: nowIso() }; await put(`classes/${classCode}`, k); }
-      const user = { id: userId, name, username, usernameNorm: un, classCode, role, pin, createdAt: nowIso() };
-      await put(`users/${token}`, user); await put(`usersByClass/${classCode}/${token}`, true);
-      await put(`accounts/${un}`, { username, usernameNorm: un, pin, token, userId, classCode, role, name, createdAt: nowIso() });
-      meCache = { token, user }; return { token, user: publicUser(user, k), klass: klassView(k) };
+      let res;
+      if (!k) {
+        const keys = await newClassKeys(); const ownerId = uid(6);
+        k = { code: classCode, name: classCode, owner: ownerId, ownerName: name, pub: keys.pub, createdAt: nowIso() }; await put(`classes/${classCode}`, k);
+        const token = uid(16); const user = { id: ownerId, name, username, usernameNorm: un, classCode, role: 'admin', rk: keys.priv, createdAt: nowIso() };
+        await put(`users/${token}`, user);
+        await put(`accounts/${un}`, { username, usernameNorm: un, userId: ownerId, classCode, role: 'admin', name, createdAt: nowIso() });
+        await put(`logins/${loginKey(un, pin)}`, { t: token });
+        await put(`rosterEnc/${classCode}/${ownerId}`, await sealEntry(keys.pub, { u: username, n: name, p: pin, t: token, r: 'admin' }));
+        res = { token, user };
+      } else res = await createAccount({ username, pin, name, classCode, role: 'student', k });
+      meCache = res; return { token: res.token, user: publicUser(res.user, k), klass: klassView(k) };
     }
 
     if (method === 'POST' && route === '/api/login-pin') {
       const un = normUser(body.username); const pin = String(body.pin || '').trim();
-      const a = await findAccount(un);
-      if (!a || String(a.pin) !== pin) fail(401, 'bad_login');
-      meCache = null; const u = await userFromToken(a.token).catch(() => fail(410, 'account_gone'));
-      const k = await klassOf(u.classCode); return { token: a.token, user: publicUser(u, k), klass: klassView(k) };
+      if (!validUsername(un) || !validPin(pin)) fail(401, 'bad_login');
+      const a = await get(`logins/${loginKey(un, pin)}`);
+      if (!a || !a.t) fail(401, 'bad_login');
+      meCache = null; const u = await userFromToken(a.t).catch(() => fail(410, 'account_gone'));
+      const k = await klassOf(u.classCode); return { token: a.t, user: publicUser(u, k), klass: klassView(k) };
     }
 
     if (route === '/api/admin/accounts' && method === 'GET') {
       const u = await userFromToken(q.get('token')); const k = await klassOf(u.classCode);
       if (!(k.owner === u.id || u.role === 'admin')) fail(403, 'owner_only');
-      return { accounts: await listClassAccounts(u.classCode) };
+      return { accounts: await listClassAccounts(u, q.get('token')) };
     }
     if (route === '/api/admin/accounts' && method === 'POST') {
       const u = await userFromToken(body.token); const k = await klassOf(u.classCode);
@@ -158,18 +201,19 @@
       const username = String(body.username || '').trim().replace(/^@/, ''); const un = normUser(username);
       const pin = validPin(body.pin) ? String(body.pin).trim() : genPin(); const name = cleanName(body.name || username) || username;
       if (!validUsername(username)) fail(400, 'bad_username'); if (await findAccount(un)) fail(409, 'username_taken');
-      const token = uid(16); const userId = uid(6);
-      const nu = { id: userId, name, username, usernameNorm: un, classCode: u.classCode, role: 'student', pin, createdAt: nowIso() };
-      await put(`users/${token}`, nu); await put(`usersByClass/${u.classCode}/${token}`, true);
-      await put(`accounts/${un}`, { username, usernameNorm: un, pin, token, userId, classCode: u.classCode, role: 'student', name, createdAt: nowIso() });
-      return { account: { id: userId, name, username, pin, role: 'student', token } };
+      if (!k.pub) fail(403, 'no_key');
+      const res = await createAccount({ username, pin, name, classCode: u.classCode, role: 'student', k });
+      return { account: { id: res.user.id, name, username, pin, role: 'student', token: res.token } };
     }
     if (method === 'POST' && /^\/api\/admin\/accounts\/[^/]+\/reset-pin$/.test(route)) {
       const targetToken = decodeURIComponent(route.split('/')[4]); const u = await userFromToken(body.token); const k = await klassOf(u.classCode);
       if (!(k.owner === u.id || u.role === 'admin')) fail(403, 'owner_only');
       const tu = await get(`users/${targetToken}`); if (!tu || tu.classCode !== u.classCode) fail(404, 'not_found');
-      const pin = validPin(body.pin) ? String(body.pin).trim() : genPin(); tu.pin = pin; await put(`users/${targetToken}`, tu);
-      if (tu.usernameNorm) { const a = await get(`accounts/${tu.usernameNorm}`); if (a) { a.pin = pin; await put(`accounts/${tu.usernameNorm}`, a); } }
+      const entries = await roster(u); const e = entries[tu.id]; if (!e || e.t !== targetToken) fail(404, 'not_found');
+      const un = normUser(e.u || tu.username || tu.name); const pin = validPin(body.pin) ? String(body.pin).trim() : genPin();
+      if (e.p && e.p !== pin) await del(`logins/${loginKey(un, e.p)}`).catch(() => {});
+      await put(`logins/${loginKey(un, pin)}`, { t: targetToken });
+      await patch('', Object.assign({ [`rosterEnc/${u.classCode}/${tu.id}`]: await sealEntry(k.pub, Object.assign({}, e, { p: pin })) }, proof(u, body.token)));
       return { pin };
     }
     if (method === 'DELETE' && /^\/api\/admin\/accounts\/[^/]+$/.test(route)) {
@@ -177,8 +221,12 @@
       if (!(k.owner === u.id || u.role === 'admin')) fail(403, 'owner_only');
       const tu = await get(`users/${targetToken}`); if (!tu || tu.classCode !== u.classCode) fail(404, 'not_found');
       if (tu.id === k.owner) fail(400, 'cannot_delete_owner');
-      await del(`users/${targetToken}`); await del(`usersByClass/${u.classCode}/${targetToken}`);
-      if (tu.usernameNorm) { await del(`accounts/${tu.usernameNorm}`); }
+      const meTok = q.get('token') || body.token; const entries = await roster(u); const e = entries[tu.id] || {};
+      const un = normUser(e.u || tu.username || '');
+      if (un && e.p) await del(`logins/${loginKey(un, e.p)}`).catch(() => {});
+      await del(`users/${targetToken}`);
+      const upd = Object.assign({ [`rosterEnc/${u.classCode}/${tu.id}`]: null }, proof(u, meTok)); if (un) upd[`accounts/${un}`] = null;
+      await patch('', upd);
       return { ok: true };
     }
 
