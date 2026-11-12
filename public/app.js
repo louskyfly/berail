@@ -116,32 +116,33 @@ const AUTH_ERR = {
 };
 function authMode(m) {
   $('#joinForm').dataset.mode = m;
-  $('.auth-tabs button').forEach((b) => b.classList.toggle('on', b.dataset.tab === m));
+  $$('.auth-tabs button').forEach((b) => b.classList.toggle('on', b.dataset.tab === m));
   $('#joinBtn').textContent = m === 'login' ? 'Se connecter' : 'Créer mon compte';
   $('#inPass').autocomplete = m === 'login' ? 'current-password' : 'new-password';
   const reg = m === 'register';
-  $('.reg-only').forEach((el) => el.classList.toggle('hidden', !reg));
+  $$('.reg-only').forEach((el) => el.classList.toggle('hidden', !reg));
   const code = $('#inCode'); if (code) code.required = reg;
   const name = $('#inName'); if (name) name.required = false;
   $('#authError').classList.add('hidden');
 }
 async function join(create) {
   const mode = $('#joinForm').dataset.mode;
-  const pseudo = $('#inPseudo').value.trim(), password = $('#inPass').value;
+  const pseudo = $('#inPseudo').value.trim(), password = $('#inPass').value.trim();
   const code = $('#inCode').value.trim().toUpperCase();
+  const name = ($('#inName') && $('#inName').value.trim()) || pseudo;
   const err = $('#authError');
   err.classList.add('hidden');
-  $('#joinBtn').disabled = true; $('#createBtn').disabled = true;
+  $('#joinBtn').disabled = true; if ($('#createBtn')) $('#createBtn').disabled = true;
   try {
     const r = mode === 'login'
-      ? await API('/api/login', { method: 'POST', body: JSON.stringify({ pseudo, password }) })
-      : await API('/api/register', { method: 'POST', body: JSON.stringify({ pseudo, password, code, create }) });
+      ? await API('/api/login-pin', { method: 'POST', body: JSON.stringify({ username: pseudo, pin: password }) })
+      : await API('/api/setup', { method: 'POST', body: JSON.stringify({ username: pseudo, pin: password, classCode: code, name }) });
     S.token = r.token;
     localStorage.setItem('berail.token', r.token);
-    localStorage.setItem('berail.pseudo', r.pseudo || pseudo);
+    localStorage.setItem('berail.pseudo', (r.user && r.user.username) || pseudo);
     S.user = r.user; S.klass = r.klass; S.moment = r.klass.moment;
     $('#inPass').value = '';
-    await enterApp();
+    await afterLogin();
   } catch (e) {
     const c = e.data && e.data.error;
     if (c === 'unknown_class') {
@@ -149,9 +150,39 @@ async function join(create) {
       const cb = $('#createBtn');
       cb.classList.remove('hidden');
       cb.textContent = `Créer la classe « ${code} »`;
-    } else err.textContent = AUTH_ERR[c] || 'Connexion impossible. Vérifie le réseau.';
+    } else if (c === 'site_stopped') { showStopped(); return; }
+    else err.textContent = AUTH_ERR[c] || (mode === 'login' ? 'Connexion impossible. Vérifie le réseau.' : 'Création impossible. Vérifie le réseau.');
     err.classList.remove('hidden');
-  } finally { $('#joinBtn').disabled = false; $('#createBtn').disabled = false; }
+  } finally { $('#joinBtn').disabled = false; if ($('#createBtn')) $('#createBtn').disabled = false; }
+}
+
+/* ---------- charte (première ouverture) et site arrêté ---------- */
+const CONSENT_KEY = 'berail.consent.v1';
+function showStopped() {
+  screens.forEach((s) => $('#' + s).classList.add('hidden'));
+  $('#screen-consent').classList.add('hidden');
+  $('#screen-stopped').classList.remove('hidden');
+  document.title = 'Page introuvable';
+}
+function showConsent() {
+  return new Promise((resolve) => {
+    const scr = $('#screen-consent'), chk = $('#consentCheck'), ok = $('#consentAccept'), nb = $('#consentNotifBtn');
+    scr.classList.remove('hidden'); chk.checked = false; ok.disabled = true;
+    chk.onchange = () => { ok.disabled = !chk.checked; };
+    nb.onclick = async () => {
+      try {
+        const st = await notifState().catch(() => 'unsupported');
+        if (st === 'install' || st === 'unsupported') { toast("Sur iPad : ajoute BeRail à l'écran d'accueil pour les notifications"); return; }
+        if (st === 'denied') { toast('Notifications bloquées dans les Réglages'); return; }
+        if (await enableNotifs()) { nb.textContent = '🔔 Notifications activées'; nb.disabled = true; }
+      } catch (_) { toast("Impossible d'activer les notifications"); }
+    };
+    ok.onclick = () => { if (!chk.checked) return; localStorage.setItem(CONSENT_KEY, new Date().toISOString()); scr.classList.add('hidden'); resolve(); };
+  });
+}
+async function afterLogin() {
+  if (!localStorage.getItem(CONSENT_KEY)) await showConsent();
+  await enterApp();
 }
 
 function secureModal() {
@@ -632,12 +663,16 @@ function renderProfile() {
     </div>
     <div class="panel">
       <h3>Mon compte</h3>
-      ${localStorage.getItem('berail.pseudo')
-        ? `<p class="acct-line"><span class="ok">🔒</span> Connecté en tant que @${esc(localStorage.getItem('berail.pseudo'))}</p>`
-        : `<p>Ton compte n'a pas encore de mot de passe. Sécurise-le pour le retrouver sur un autre appareil.</p>
-           <button class="btn btn-primary" style="width:100%;margin-bottom:10px" id="pSecure">Sécuriser mon compte</button>`}
+      <p class="acct-line"><span class="ok">🔒</span> ${S.user.username || localStorage.getItem('berail.pseudo') ? 'Connecté en tant que @' + esc(S.user.username || localStorage.getItem('berail.pseudo')) : 'Connecté'}</p>
+      <button class="btn btn-ghost" style="width:100%;margin-bottom:10px" id="pCharter">Relire la charte</button>
       <button class="btn btn-ghost" style="width:100%" id="pLogout">Se déconnecter</button>
-    </div>`;
+    </div>
+    ${isOwner ? `<div class="panel">
+      <h3>Espace prof</h3>
+      <p>Identifiants et codes à 4 chiffres de la classe, création et réinitialisation des comptes.</p>
+      <button class="btn btn-primary" style="width:100%;margin-bottom:10px" id="pAccounts">Comptes & codes de la classe</button>
+      <button class="btn btn-ghost" style="width:100%;color:var(--danger)" id="pStop">Arrêter totalement le site</button>
+    </div>` : ''}`;
 
   document.querySelectorAll('.theme-opt').forEach((b) => { b.onclick = () => { applyTheme(b.dataset.themeId); renderProfile(); }; });
   $('#pAvatar').onclick = avatarEditor;
@@ -657,7 +692,8 @@ function renderProfile() {
   if (isOwner) $('#pPurge').onclick = purgeModal;
   renderNotifPanel();
   $('#pLogout').onclick = logout;
-  if ($('#pSecure')) $('#pSecure').onclick = secureModal;
+  $('#pCharter').onclick = charterModal;
+  if (isOwner) { $('#pAccounts').onclick = accountsModal; $('#pStop').onclick = stopSiteModal; }
 }
 
 /* ---------- notifications ---------- */
@@ -967,7 +1003,7 @@ async function accountsModal() {
       catch(e){ toast((e.data&&AUTH_ERR[e.data.error])||'Impossible'); }
     };
     $('#acCopy').onclick = () => { const txt = rows.map(a => a.name + ' @' + (a.username||'') + ' : ' + (a.pin||'')).join('\n'); navigator.clipboard?.writeText(txt).then(()=>toast('Copié')).catch(()=>{ prompt('Copie :', txt); }); };
-    $('.acct-actions [data-act]').forEach(btn => {
+    $$('.acct-actions [data-act]').forEach(btn => {
       btn.onclick = async () => {
         if (btn.dataset.act === 'reset') {
           try { const res = await API('/api/admin/accounts/'+btn.dataset.t+'/reset-pin', { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({ token:S.token }) }); toast('Nouveau code : '+res.pin); accountsModal(); } catch(e){ toast('Impossible'); }
@@ -977,11 +1013,11 @@ async function accountsModal() {
         }
       };
     });
-  } catch (e) { openModal('<div class="sheet"><h3>Comptes & codes</h3><p>Impossible de charger.</p></div>'); }
+  } catch (e) { openModal(`<div class="sheet"><h3>Comptes & codes</h3><p>Impossible de charger (${esc((e.data&&e.data.error)||e.message||'')}).</p></div>`); }
 }
 
 function stopSiteModal() {
-  openModal(`<div class="sheet"><h3>Arrêter totalement le site</h3><p style="color:var(--danger)">Toutes les pages afficheront « Cette page n’existe pas » pour tout le monde.</p><p>Pour le rallumer, il faudra remettre site/stopped à null dans la base Firebase.</p><div class="row"><button class="btn btn-ghost" data-close>Annuler</button><button class="btn btn-primary" id="doStop" style="background:var(--danger)">Arrêter le site</button></div></div>`);
+  openModal(`<div class="sheet"><h3>Arrêter totalement le site</h3><p style="color:var(--danger)">Toutes les pages afficheront « Cette page n’existe pas » pour tout le monde.</p><p>Pour le rallumer, il faudra supprimer site/stopped dans la base Firebase (ou demander à Hark).</p><div class="row"><button class="btn btn-ghost" data-close>Annuler</button><button class="btn btn-primary" id="doStop" style="background:var(--danger)">Arrêter le site</button></div></div>`);
   $('#doStop').onclick = async () => {
     try { await API('/api/admin/stop', { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({ token: S.token }) }); showStopped(); }
     catch(e){ toast('Impossible'); }
@@ -997,6 +1033,7 @@ async function boot() {
   const shared = new URLSearchParams(location.search).get('p');
   if (shared) { showShared(shared.trim().toUpperCase()); return; }
 
+  try { const st = await API('/api/site'); if (st && st.stopped) { showStopped(); return; } } catch (_) {}
   if (!S.token) {
     showScreen('screen-auth');
     const qs = new URLSearchParams(location.search);
@@ -1007,8 +1044,10 @@ async function boot() {
   try {
     const r = await API('/api/me?token=' + encodeURIComponent(S.token));
     S.user = r.user; S.klass = r.klass; S.moment = r.klass.moment;
-    await enterApp();
-  } catch (_) {
+    await afterLogin();
+  } catch (e) {
+    if (e && e.data && e.data.error === 'site_stopped') { showStopped(); return; }
+    if (e && e.status && e.status !== 401 && e.status !== 410) { showScreen('screen-auth'); return; }
     localStorage.removeItem('berail.token');
     S.token = null;
     showScreen('screen-auth');
