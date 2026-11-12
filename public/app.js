@@ -869,10 +869,15 @@ async function loadFile(input) {
   return c;
 }
 
+let publishing = false;
+
 async function publish() {
-  if (!cap.photo) return;
+  if (!cap.photo || publishing) return;
+  publishing = true;
   const btn = $('#publishBtn');
-  btn.disabled = true; btn.textContent = 'Publication…';
+  const top = $('#publishTop');
+  if (btn) { btn.disabled = true; btn.textContent = 'Publication…'; }
+  if (top) { top.disabled = true; top.textContent = '…'; }
   try {
     const caption = $('#captionInput').value.trim();
     const front = cap.front || cap.back;
@@ -889,7 +894,9 @@ async function publish() {
   } catch (e) {
     toast(e.data && e.data.error === 'too_large' ? 'Photo trop lourde' : 'Publication impossible');
   } finally {
-    btn.disabled = false; btn.textContent = 'Publier';
+    publishing = false;
+    if (btn) { btn.disabled = false; btn.textContent = 'Publier'; }
+    if (top) { top.disabled = false; top.textContent = 'Publier'; }
   }
 }
 
@@ -968,6 +975,7 @@ $('#closeCapture2').addEventListener('click', closeCapture);
 $('#shutter').addEventListener('click', shutter);
 $('#retake').addEventListener('click', openCapture);
 $('#publishBtn').addEventListener('click', publish);
+$('#publishTop').addEventListener('click', publish);
 $('#flipCam').addEventListener('click', async () => {
   cap.phase = cap.phase === 'back' ? 'front' : 'back';
   setPhaseUI();
