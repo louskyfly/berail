@@ -110,9 +110,9 @@ const AUTH_ERR = {
   bad_pin: 'Le code doit faire exactement 4 chiffres.',
   bad_code: 'Le code de classe doit faire 3 à 12 caractères (lettres, chiffres, tiret).',
   account_gone: 'Ce compte a été supprimé.',
-  owner_only: 'Réservé au prof.',
+  owner_only: 'Réservé à l’administrateur.',
   site_stopped: 'Cette page n’existe pas.',
-  cannot_delete_owner: 'Impossible de supprimer le prof.'
+  cannot_delete_owner: 'Impossible de supprimer l’administrateur.'
 };
 function authMode(m) {
   $('#joinForm').dataset.mode = m;
@@ -672,7 +672,7 @@ function renderProfile() {
       <button class="btn btn-ghost" style="width:100%" id="pLogout">Se déconnecter</button>
     </div>
     ${isOwner ? `<div class="panel">
-      <h3>Espace prof</h3>
+      <h3>Espace administrateur</h3>
       <p>Identifiants et codes à 4 chiffres de la classe, création et réinitialisation des comptes.</p>
       <button class="btn btn-primary" style="width:100%;margin-bottom:10px" id="pAccounts">Comptes & codes de la classe</button>
       <button class="btn btn-ghost" style="width:100%;color:var(--danger)" id="pStop">Arrêter totalement le site</button>
