@@ -104,21 +104,26 @@ function showScreen(id) {
 
 /* ---------- auth ---------- */
 const AUTH_ERR = {
-  bad_login: 'Pseudo ou mot de passe incorrect.',
-  pseudo_taken: 'Ce pseudo est déjà pris.',
-  bad_pseudo: 'Pseudo : 3 à 20 caractères (lettres, chiffres, . _ -), sans espace.',
-  weak_password: 'Le mot de passe doit faire au moins 6 caractères.',
-  bad_code: 'Le code doit faire 3 à 12 caractères (lettres, chiffres, tiret).',
-  account_gone: 'Ce compte a été supprimé par l’admin.',
-  name_too_short: 'Le pseudo doit faire au moins 3 caractères.'
+  bad_login: 'Identifiant ou code à 4 chiffres incorrect.',
+  username_taken: 'Cet identifiant est déjà pris.',
+  bad_username: 'Identifiant : 2 à 20 caractères (lettres, chiffres, . _ -), sans espace.',
+  bad_pin: 'Le code doit faire exactement 4 chiffres.',
+  bad_code: 'Le code de classe doit faire 3 à 12 caractères (lettres, chiffres, tiret).',
+  account_gone: 'Ce compte a été supprimé.',
+  owner_only: 'Réservé au prof.',
+  site_stopped: 'Cette page n’existe pas.',
+  cannot_delete_owner: 'Impossible de supprimer le prof.'
 };
 function authMode(m) {
   $('#joinForm').dataset.mode = m;
-  $$('.auth-tabs button').forEach((b) => b.classList.toggle('on', b.dataset.tab === m));
+  $('.auth-tabs button').forEach((b) => b.classList.toggle('on', b.dataset.tab === m));
   $('#joinBtn').textContent = m === 'login' ? 'Se connecter' : 'Créer mon compte';
   $('#inPass').autocomplete = m === 'login' ? 'current-password' : 'new-password';
-  $('#inCode').required = m === 'register';
-  $('#authError').classList.add('hidden'); $('#createBtn').classList.add('hidden');
+  const reg = m === 'register';
+  $('.reg-only').forEach((el) => el.classList.toggle('hidden', !reg));
+  const code = $('#inCode'); if (code) code.required = reg;
+  const name = $('#inName'); if (name) name.required = false;
+  $('#authError').classList.add('hidden');
 }
 async function join(create) {
   const mode = $('#joinForm').dataset.mode;
@@ -186,8 +191,9 @@ async function enterApp() {
 }
 
 async function logout() {
-  if (!localStorage.getItem('berail.pseudo') && !confirm("Ton compte n'a pas de mot de passe : tu ne pourras plus y revenir. Changer quand même ?")) return;
-  localStorage.removeItem('berail.token'); localStorage.removeItem('berail.pseudo');
+  localStorage.removeItem('berail.token');
+  localStorage.removeItem('berail.username');
+  localStorage.removeItem('berail.pseudo');
   location.reload();
 }
 
@@ -942,6 +948,51 @@ async function showShared(code) {
 }
 
 /* ---------- démarrage ---------- */
+
+async function accountsModal() {
+  openModal('<div class="sheet"><h3>Comptes & codes</h3><p>Chargement…</p></div>');
+  try {
+    const r = await API('/api/admin/accounts?token=' + encodeURIComponent(S.token));
+    const rows = r.accounts || [];
+    const list = rows.map(a => `<div class="acct-row"><div class="acct-main"><b>${esc(a.name)}</b><span>@${esc(a.username||'')} · ${esc(a.role)}</span></div><div class="acct-pin"><code>${esc(a.pin||'—')}</code></div><div class="acct-actions"><button class="mini-btn" data-act="reset" data-t="${esc(a.token)}">Nouveau code</button>${a.role!=='admin'?'<button class="mini-btn danger" data-act="del" data-t="'+esc(a.token)+'" data-n="'+esc(a.name)+'">Suppr.</button>':''}</div></div>`).join('');
+    openModal(`<div class="sheet"><h3>Comptes & codes de la classe</h3><p>Identifiants et codes à 4 chiffres. Garde-les confidentiels.</p>
+      <div class="acct-create"><input id="acName" placeholder="Prénom" maxlength="24"><input id="acUser" placeholder="identifiant" maxlength="20"><button class="btn btn-primary" id="acAdd">Créer</button></div>
+      <div class="acct-list">${list || '<p>Aucun compte.</p>'}</div>
+      <button class="btn btn-ghost" style="width:100%;margin-top:10px" id="acCopy">Copier la liste</button>
+    </div>`);
+    $('#acAdd').onclick = async () => {
+      const name = $('#acName').value.trim(), username = $('#acUser').value.trim();
+      if (!username) return toast('Identifiant requis');
+      try { const res = await API('/api/admin/accounts', { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({ token: S.token, name: name||username, username }) }); toast('Compte créé : @'+(res.account.username||username)+' / '+res.account.pin); accountsModal(); }
+      catch(e){ toast((e.data&&AUTH_ERR[e.data.error])||'Impossible'); }
+    };
+    $('#acCopy').onclick = () => { const txt = rows.map(a => a.name + ' @' + (a.username||'') + ' : ' + (a.pin||'')).join('\n'); navigator.clipboard?.writeText(txt).then(()=>toast('Copié')).catch(()=>{ prompt('Copie :', txt); }); };
+    $('.acct-actions [data-act]').forEach(btn => {
+      btn.onclick = async () => {
+        if (btn.dataset.act === 'reset') {
+          try { const res = await API('/api/admin/accounts/'+btn.dataset.t+'/reset-pin', { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({ token:S.token }) }); toast('Nouveau code : '+res.pin); accountsModal(); } catch(e){ toast('Impossible'); }
+        } else {
+          if (!confirm('Supprimer le compte de '+btn.dataset.n+' ?')) return;
+          try { await API('/api/admin/accounts/'+btn.dataset.t+'?token='+encodeURIComponent(S.token), { method:'DELETE' }); toast('Compte supprimé'); accountsModal(); } catch(e){ toast((e.data&&AUTH_ERR[e.data.error])||'Impossible'); }
+        }
+      };
+    });
+  } catch (e) { openModal('<div class="sheet"><h3>Comptes & codes</h3><p>Impossible de charger.</p></div>'); }
+}
+
+function stopSiteModal() {
+  openModal(`<div class="sheet"><h3>Arrêter totalement le site</h3><p style="color:var(--danger)">Toutes les pages afficheront « Cette page n’existe pas » pour tout le monde.</p><p>Pour le rallumer, il faudra remettre site/stopped à null dans la base Firebase.</p><div class="row"><button class="btn btn-ghost" data-close>Annuler</button><button class="btn btn-primary" id="doStop" style="background:var(--danger)">Arrêter le site</button></div></div>`);
+  $('#doStop').onclick = async () => {
+    try { await API('/api/admin/stop', { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({ token: S.token }) }); showStopped(); }
+    catch(e){ toast('Impossible'); }
+  };
+}
+
+function charterModal() {
+  const body = document.querySelector('#screen-consent .charter-list')?.outerHTML || '';
+  openModal(`<div class="sheet"><h3>Charte d’utilisation</h3><div class="consent-scroll" style="max-height:60vh">${body}</div><button class="btn btn-primary" style="width:100%;margin-top:12px" data-close>Fermer</button></div>`);
+}
+
 async function boot() {
   const shared = new URLSearchParams(location.search).get('p');
   if (shared) { showShared(shared.trim().toUpperCase()); return; }
@@ -967,7 +1018,7 @@ async function boot() {
 /* ---------- écouteurs ---------- */
 $('#joinForm').addEventListener('submit', (e) => { e.preventDefault(); join(false); });
 $$('.auth-tabs button').forEach((b) => { b.onclick = () => authMode(b.dataset.tab); });
-$('#createBtn').addEventListener('click', () => join(true));
+const cb=$('#createBtn'); if(cb) cb.addEventListener('click', () => join(true));
 $('#classChip').addEventListener('click', classModal);
 $('#openCapture').addEventListener('click', openCapture);
 $('#closeCapture').addEventListener('click', closeCapture);

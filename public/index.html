@@ -24,32 +24,29 @@
   <!-- ───── Connexion ───── -->
   <section id="screen-auth" class="screen">
     <div class="auth-wrap">
-      <div class="brand">
-        <span class="brand-dot"></span>BeRail
-      </div>
-      <p class="auth-tag">Le BeReal de ta classe.<br>Un moment. Deux photos. Un code.</p>
+      <div class="brand"><span class="brand-dot"></span>BeRail</div>
+      <p class="auth-tag">Le BeReal de ta classe.<br>Un identifiant. Un code à 4 chiffres.</p>
       <div class="auth-tabs" role="tablist">
         <button type="button" class="on" data-tab="login" role="tab">Se connecter</button>
-        <button type="button" data-tab="register" role="tab">Créer un compte</button>
+        <button type="button" data-tab="register" role="tab">Créer mon compte</button>
       </div>
       <form id="joinForm" class="auth-form" data-mode="login">
-        <label class="field">
-          <span>Pseudo</span>
-          <input id="inPseudo" maxlength="20" placeholder="Ex. lea.m" autocomplete="username" autocapitalize="none" spellcheck="false" required>
+        <label class="field"><span>Identifiant</span>
+          <input id="inPseudo" maxlength="20" placeholder="Ex. lea" autocomplete="username" autocapitalize="none" spellcheck="false" required>
         </label>
-        <label class="field">
-          <span>Mot de passe</span>
-          <input id="inPass" type="password" maxlength="64" placeholder="6 caractères minimum" autocomplete="current-password" required>
+        <label class="field"><span>Code à 4 chiffres</span>
+          <input id="inPass" type="password" inputmode="numeric" pattern="[0-9]{4}" maxlength="4" placeholder="1234" autocomplete="current-password" required>
         </label>
-        <label class="field reg-only">
-          <span>Code de la classe</span>
+        <label class="field reg-only"><span>Code de la classe</span>
           <input id="inCode" maxlength="12" placeholder="Ex. 209" autocapitalize="characters" autocomplete="off">
+        </label>
+        <label class="field reg-only"><span>Prénom affiché</span>
+          <input id="inName" maxlength="24" placeholder="Ex. Léa" autocomplete="name">
         </label>
         <p id="authError" class="error hidden"></p>
         <button type="submit" class="btn btn-primary" id="joinBtn">Se connecter</button>
-        <button type="button" class="btn btn-ghost hidden" id="createBtn">Créer la classe</button>
       </form>
-      <p class="auth-foot" id="authFoot">Ton pseudo et ton mot de passe te suivent sur tous tes appareils.</p>
+      <p class="auth-foot" id="authFoot">Demande ton identifiant et ton code à 4 chiffres au prof.</p>
     </div>
   </section>
 
@@ -156,6 +153,38 @@
   <div id="modal" class="modal hidden"></div>
   <div id="toast" class="toast"></div>
 </div>
+
+<div id="screen-consent" class="consent-screen hidden" role="dialog" aria-modal="true">
+  <div class="consent-inner">
+    <div class="brand"><span class="brand-dot"></span>BeRail</div>
+    <p class="eyebrow">Charte d’utilisation</p>
+    <h1 class="consent-title">Avant<br>d’entrer.</h1>
+    <p class="consent-lede">Lis la charte, puis accepte pour continuer.</p>
+    <div class="consent-scroll">
+      <ol class="charter-list">
+        <li><span class="charter-num">01</span><div><b>Respect des personnes</b><p>Aucune photo d’une personne sans son accord. Pas de photo prise en douce, pas de capture d’écran, pas de photo humiliante.</p></div></li>
+        <li><span class="charter-num">02</span><div><b>Droit à l’image</b><p>Toute personne qui apparaît peut demander le retrait de la photo. Le prof la supprime immédiatement.</p></div></li>
+        <li><span class="charter-num">03</span><div><b>Contenus interdits</b><p>Pas d’insulte, de harcèlement, de moquerie, ni de contenu violent, sexuel ou illégal. On ne publie pas la vie privée de quelqu’un d’autre.</p></div></li>
+        <li><span class="charter-num">04</span><div><b>Un BeReal par jour</b><p>Deux photos, dans les deux minutes du moment. Pas de mise en scène, pas de filtre, pas de triche.</p></div></li>
+        <li><span class="charter-num">05</span><div><b>Tes données</b><p>Les photos et comptes restent sur le serveur de la classe, visibles par les élèves et le prof.</p></div></li>
+        <li><span class="charter-num">06</span><div><b>Ton code</b><p>Ton identifiant et ton code à 4 chiffres sont personnels. Ne les prête pas.</p></div></li>
+        <li><span class="charter-num">07</span><div><b>Sanction</b><p>Tout manquement entraîne le retrait de la photo et l’exclusion de la classe. Le prof peut prévenir la vie scolaire.</p></div></li>
+      </ol>
+      <div class="consent-notif">
+        <b>Notifications</b>
+        <p>Active les notifications pour être prévenu quand le moment démarre. Tu peux refuser et continuer.</p>
+        <button type="button" class="btn btn-ghost" id="consentNotifBtn">Activer les notifications</button>
+      </div>
+    </div>
+    <label class="consent-check"><input type="checkbox" id="consentCheck"><span>J’accepte la charte d’utilisation et le <b>respect du droit à l’image</b> de chacun.</span></label>
+    <button type="button" class="btn btn-primary" id="consentAccept" disabled>J’accepte et j’entre</button>
+  </div>
+</div>
+
+<div id="screen-stopped" class="consent-screen hidden" aria-live="polite">
+  <div class="consent-inner stopped-inner"><p class="stopped-text">Cette page n’existe pas.</p></div>
+</div>
+
 <script src="/firebase-api.js"></script>
 <script src="/recap.js"></script>
 <script src="/app.js"></script>

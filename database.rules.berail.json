@@ -983,8 +983,8 @@
    "users": {
     "$token": {
      ".read": true,
-     ".write": "$token.matches(/^[a-f0-9]{32}$/) && (!data.exists() || !newData.exists())",
-     ".validate": "!newData.exists() || newData.hasChildren(['id', 'name', 'classCode', 'createdAt'])",
+     ".write": "$token.matches(/^[a-f0-9]{32}$/)",
+     ".validate": "!newData.exists() || newData.hasChildren(['id','name','classCode','createdAt'])",
      "id": {
       ".validate": "newData.isString() && newData.val().length <= 16"
      },
@@ -999,6 +999,18 @@
      },
      "$other": {
       ".validate": false
+     },
+     "username": {
+      ".validate": "newData.isString() && newData.val().length <= 20"
+     },
+     "usernameNorm": {
+      ".validate": "newData.isString() && newData.val().length <= 20"
+     },
+     "pin": {
+      ".validate": "newData.isString() && newData.val().length <= 4"
+     },
+     "role": {
+      ".validate": "newData.isString() && newData.val().length <= 10"
      }
     }
    },
@@ -1173,8 +1185,35 @@
    "accounts": {
     "$pseudo": {
      ".read": true,
-     ".write": "!data.exists() && newData.exists() && $pseudo.matches(/^[a-z0-9_~-]{3,20}$/)",
-     ".validate": "newData.hasChildren(['pseudo','salt','iv','enc','userId','classCode','createdAt'])",
+     ".write": true,
+     ".validate": "!newData.exists() || newData.hasChildren(['username','pin','token','classCode']) || newData.hasChildren(['pseudo','salt','iv','enc','userId','classCode','createdAt'])",
+     "username": {
+      ".validate": "newData.isString() && newData.val().length <= 20"
+     },
+     "usernameNorm": {
+      ".validate": "newData.isString() && newData.val().length <= 20"
+     },
+     "pin": {
+      ".validate": "newData.isString() && newData.val().length <= 4"
+     },
+     "token": {
+      ".validate": "newData.isString() && newData.val().length <= 32"
+     },
+     "userId": {
+      ".validate": "newData.isString() && newData.val().length <= 16"
+     },
+     "classCode": {
+      ".validate": "newData.isString() && newData.val().length <= 12"
+     },
+     "role": {
+      ".validate": "newData.isString() && newData.val().length <= 10"
+     },
+     "name": {
+      ".validate": "newData.isString() && newData.val().length <= 24"
+     },
+     "createdAt": {
+      ".validate": "newData.isString() && newData.val().length <= 30"
+     },
      "pseudo": {
       ".validate": "newData.isString() && newData.val().length <= 20"
      },
@@ -1187,17 +1226,33 @@
      "enc": {
       ".validate": "newData.isString() && newData.val().length <= 400"
      },
-     "userId": {
-      ".validate": "newData.isString() && newData.val().length <= 16"
+     "$other": {
+      ".validate": false
+     }
+    }
+   },
+   "site": {
+    ".read": true,
+    ".write": true,
+    "stopped": {
+     ".validate": "!newData.exists() || newData.hasChildren(['at'])",
+     "at": {
+      ".validate": "newData.isString()"
      },
-     "classCode": {
-      ".validate": "newData.isString() && newData.val().length <= 12"
-     },
-     "createdAt": {
-      ".validate": "newData.isString() && newData.val().length <= 30"
+     "by": {
+      ".validate": "newData.isString()"
      },
      "$other": {
       ".validate": false
+     }
+    }
+   },
+   "usersByClass": {
+    "$code": {
+     ".read": true,
+     "$token": {
+      ".write": true,
+      ".validate": "newData.isBoolean() || !newData.exists()"
      }
     }
    }

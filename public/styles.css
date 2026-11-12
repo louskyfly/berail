@@ -395,3 +395,34 @@ button{font:inherit;color:inherit;background:none;border:0;padding:0;cursor:poin
 #joinForm[data-mode="login"] .reg-only{display:none}
 .acct-line{display:flex;align-items:center;gap:8px;font-weight:700;margin:4px 0 12px}
 .acct-line .ok{color:#1a9b5a}
+
+
+/* ---- consent / charte / stop ---- */
+.consent-screen{position:fixed;inset:0;z-index:300;overflow-y:auto;background:var(--bg,#0c0c0d);color:var(--fg,#f5f5f3);padding:24px clamp(16px,5vw,48px) 40px}
+.consent-screen.hidden{display:none !important}
+.consent-inner{max-width:720px;margin:0 auto;display:flex;flex-direction:column;gap:10px}
+.consent-title{font-size:clamp(34px,6vw,56px);line-height:.95;margin:4px 0 8px}
+.consent-lede{opacity:.8;max-width:520px}
+.consent-scroll{margin:10px 0}
+.charter-list{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:12px}
+.charter-list li{display:grid;grid-template-columns:34px 1fr;gap:10px;padding-bottom:12px;border-bottom:1px solid rgba(127,127,127,.25)}
+.charter-num{font-size:11px;opacity:.6;padding-top:3px}
+.charter-list b{font-size:14px}
+.charter-list p{margin:4px 0 0;opacity:.75;font-size:13px;line-height:1.45}
+.consent-notif{margin-top:14px;padding:14px;border:1px solid rgba(127,127,127,.25);border-radius:14px}
+.consent-notif p{opacity:.75;font-size:13px;margin:6px 0 10px}
+.consent-check{display:flex;gap:12px;align-items:flex-start;cursor:pointer;padding:12px;border:1px solid rgba(127,127,127,.35);border-radius:14px;margin:8px 0}
+.consent-check input{width:20px;height:20px;flex:none;margin-top:1px}
+.consent-check span{font-size:13.5px;line-height:1.4}
+.stopped-inner{min-height:70vh;align-items:center;justify-content:center}
+.stopped-text{font-size:20px;opacity:.8}
+#joinForm[data-mode="login"] .reg-only{display:none}
+.acct-create{display:flex;gap:8px;flex-wrap:wrap;margin:10px 0}
+.acct-create input{flex:1;min-width:120px;padding:10px 12px;border-radius:10px;border:1px solid rgba(127,127,127,.3);background:transparent;color:inherit}
+.acct-list{display:flex;flex-direction:column;gap:8px;margin-top:8px;max-height:50vh;overflow:auto}
+.acct-row{display:grid;grid-template-columns:1fr auto auto;gap:8px;align-items:center;padding:10px;border:1px solid rgba(127,127,127,.25);border-radius:12px}
+.acct-main{display:flex;flex-direction:column;font-size:13px}
+.acct-main span{opacity:.65;font-size:12px}
+.acct-pin code{font-size:16px;font-weight:700;letter-spacing:2px}
+.acct-actions{display:flex;gap:6px;flex-wrap:wrap;justify-content:flex-end}
+.acct-actions .mini-btn.danger{color:var(--danger,#e55)}
