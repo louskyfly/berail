@@ -1056,7 +1056,7 @@ function stopSiteModal() {
 }
 
 function charterModal() {
-  const body = document.querySelector('#screen-consent .charter-list')?.outerHTML || '';
+  const body = (document.querySelector('#screen-consent .charter-list')?.outerHTML || '') + (document.querySelector('#screen-consent .charter-fine')?.outerHTML || '');
   openModal(`<div class="sheet"><h3>Charte d’utilisation</h3><div class="consent-scroll" style="max-height:60vh">${body}</div><button class="btn btn-primary" style="width:100%;margin-top:12px" data-close>Fermer</button></div>`);
 }
 

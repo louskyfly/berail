@@ -494,3 +494,6 @@ button{font:inherit;color:inherit;background:none;border:0;padding:0;cursor:poin
 .hist-row small{display:block;color:var(--muted);font-size:12px}
 .hist-ico{width:22px;text-align:center}
 input[type="time"]{font:inherit;color:var(--fg);background:var(--surface-2);border:1px solid var(--line-strong);border-radius:10px;padding:6px 8px}
+
+/* Mention discrète en fin de charte */
+.charter-fine{font-size:10px;line-height:1.35;opacity:.55;margin:10px 4px 0;text-align:left}
