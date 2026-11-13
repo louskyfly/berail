@@ -58,6 +58,7 @@
         <button class="chip" id="classChip" title="Partager le code de la classe"></button>
       </div>
       <div class="topbar-right">
+        <button class="decoy-trigger" id="decoyTrigger" aria-label="Bibliothèque">📚</button>
         <button class="avatar sm" id="topAvatar" aria-label="Mon profil"></button>
       </div>
     </header>
@@ -112,8 +113,13 @@
 
     <div class="capture-bottom">
       <p class="capture-hint" id="captureHint">Photo arrière</p>
-      <button class="shutter" id="shutter" aria-label="Prendre la photo"></button>
+      <div class="capture-row">
+        <button class="timer-btn" id="timerBtn" aria-label="Retardateur">⏱ <span id="timerLabel">Off</span></button>
+        <button class="shutter" id="shutter" aria-label="Prendre la photo"></button>
+        <button class="timer-btn ghost" id="flashBtn" aria-label="Flash">⚡</button>
+      </div>
       <p class="capture-sub" id="captureSub">1 / 2</p>
+      <div class="countdown-screen hidden" id="countdownScreen"><span id="countdownNum">3</span></div>
     </div>
 
     <div class="review hidden" id="review">
@@ -143,6 +149,15 @@
       <div class="review-foot">
         <span class="review-late hidden" id="reviewLate">⚠️ En retard</span>
         <div class="cap-row"><input id="captionInput" maxlength="140" placeholder="Ajoute une légende…" autocomplete="off" enterkeyhint="send"><button type="button" class="send-btn" id="publishSend" aria-label="Publier">➤</button></div>
+        <div class="filter-strip" id="filterStrip">
+          <button data-filter="none" class="filter-thumb on"><span>Original</span></button>
+          <button data-filter="bw" class="filter-thumb"><span>N&B</span></button>
+          <button data-filter="sepia" class="filter-thumb"><span>Sépia</span></button>
+          <button data-filter="vivid" class="filter-thumb"><span>Vif</span></button>
+          <button data-filter="vintage" class="filter-thumb"><span>Vintage</span></button>
+          <button data-filter="cold" class="filter-thumb"><span>Froid</span></button>
+          <button data-filter="warm" class="filter-thumb"><span>Chaud</span></button>
+        </div>
         <button class="btn btn-primary" id="publishBtn">Publier</button>
         <p class="review-note">Visible par ta classe uniquement.</p>
       </div>
@@ -155,6 +170,22 @@
   <!-- ───── Modale ───── -->
   <div id="modal" class="modal hidden"></div>
   <div id="toast" class="toast"></div>
+</div>
+
+<div id="screen-decoy" class="decoy-screen hidden" aria-hidden="true">
+  <header class="decoy-head">
+    <div class="decoy-brand"><span class="decoy-dot"></span>Bibliothèque</div>
+    <nav class="decoy-nav"><span class="on">Manuels</span><span>Fictions</span><span>Ressources</span><span>CDI</span></nav>
+  </header>
+  <div class="decoy-hero">
+    <p class="decoy-eyebrow">Manuel numérique · classe 209</p>
+    <h1>La lecture, partout.</h1>
+    <p>Retrouvez les ouvrages au programme, les fiches de lecture et les ressources du CDI. Empruntez un livre en un geste, révisez hors ligne.</p>
+    <div class="decoy-search"><span>🔍 Rechercher un titre, un auteur, une cote…</span></div>
+    <div class="decoy-chips"><span>Tous</span><span>Lettres</span><span>Histoire</span><span>Maths</span><span>Sciences</span><span>Langues</span><span>Arts</span></div>
+  </div>
+  <main class="decoy-grid" id="decoyGrid"></main>
+  <footer class="decoy-foot" id="decoyFoot">© Médiathèque scolaire · Manuel numérique · <span class="decoy-exit" id="decoyExit">Aide</span></footer>
 </div>
 
 <div id="screen-consent" class="consent-screen hidden" role="dialog" aria-modal="true">

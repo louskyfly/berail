@@ -381,6 +381,253 @@ function storiesRow() {
   return `<div class="stories">${me}${others}</div>`;
 }
 
+
+/* ---------- séries (hors week-end) & récap ---------- */
+function dayKeyOf(d) { return window.BerailDayKey(d); }
+function isWeekend(d) { const w = d.getDay(); return w === 0 || w === 6; }
+function prevWorkday(d) {
+  const x = new Date(d.getTime());
+  x.setDate(x.getDate() - 1);
+  while (isWeekend(x)) x.setDate(x.getDate() - 1);
+  return x;
+}
+function myDaysMap() {
+  const uid = S.user && S.user.id;
+  const all = S.stats || {};
+  const byClass = S.klass && S.klass.code ? all[S.klass.code] : null;
+  const mine = byClass && byClass[uid] ? byClass[uid] : (all[uid] || null);
+  return (mine && mine.days) || {};
+}
+function currentStreak() {
+  const days = myDaysMap();
+  let d = new Date();
+  while (isWeekend(d)) d.setDate(d.getDate() - 1);
+  let n = 0;
+  let first = true;
+  for (let i = 0; i < 400; i++) {
+    const k = dayKeyOf(d);
+    if (days[k]) n += 1;
+    else if (!first) break;
+    first = false;
+    d = prevWorkday(d);
+  }
+  return n;
+}
+function longestStreak() {
+  const days = myDaysMap();
+  const keys = Object.keys(days).sort();
+  if (!keys.length) return 0;
+  let best = 0, run = 0;
+  let prev = null;
+  for (const k of keys) {
+    if (!days[k]) continue;
+    const d = new Date(k + 'T12:00:00');
+    if (isWeekend(d)) continue;
+    if (prev && dayKeyOf(prevWorkday(d)) === prev) run += 1;
+    else run = 1;
+    prev = k;
+    if (run > best) best = run;
+  }
+  return best;
+}
+function weekDayDots() {
+  const days = myDaysMap();
+  const today = new Date();
+  const monday = new Date(today);
+  const wd = (today.getDay() + 6) % 7;
+  monday.setDate(today.getDate() - wd);
+  const labels = ['L', 'M', 'M', 'J', 'V'];
+  return labels.map((l, i) => {
+    const d = new Date(monday); d.setDate(monday.getDate() + i);
+    const k = dayKeyOf(d);
+    const ok = !!days[k];
+    const isToday = dayKeyOf(today) === k;
+    return `<span class="flame-day ${ok ? 'ok' : ''} ${isToday ? 'today' : ''}">${l}</span>`;
+  }).join('');
+}
+function flameCard() {
+  const n = currentStreak();
+  const best = longestStreak();
+  if (!n && !best) return '';
+  return `<div class="flame-card ${n ? 'live' : ''}">
+    <div class="flame-main"><b>${n}</b><span>jour${n > 1 ? 's' : ''} d'affilée</span><small>hors week-end</small></div>
+    <div class="flame-week">${weekDayDots()}</div>
+    <div class="flame-best">record ${best}</div>
+  </div>`;
+}
+function weeklyRecapData() {
+  const today = new Date();
+  const monday = new Date(today);
+  const wd = (today.getDay() + 6) % 7;
+  monday.setDate(today.getDate() - wd);
+  monday.setHours(0, 0, 0, 0);
+  const start = monday.getTime();
+  const posts = S.posts.filter((p) => Date.parse(p.createdAt) >= start);
+  const mine = posts.filter((p) => p.mine);
+  const reactions = posts.reduce((n, p) => n + (p.reactionTotal || 0), 0);
+  let star = null;
+  for (const p of posts) if (!star || (p.reactionTotal || 0) > (star.reactionTotal || 0)) star = p;
+  return { posts, mine, reactions, star, weekLabel: monday.toLocaleDateString('fr-FR', { day: 'numeric', month: 'long' }) };
+}
+function recapWeekCard() {
+  const r = weeklyRecapData();
+  if (!r.posts.length) return '';
+  return `<div class="recap-card">
+    <div class="recap-copy"><p class="eyebrow">Récap de la semaine</p>
+      <h3>La semaine en un coup d'œil.</h3>
+      <p>${r.posts.length} BeRail · ${r.reactions} réactions · toi : ${r.mine.length}</p></div>
+    <button class="btn btn-primary" id="openWeeklyRecap">Voir le récap</button>
+  </div>`;
+}
+function openWeeklyRecap() {
+  const r = weeklyRecapData();
+  const photos = [...r.posts].sort((a, b) => (b.reactionTotal || 0) - (a.reactionTotal || 0)).slice(0, 9);
+  openModal(`<div class="sheet recap-sheet">
+    <p class="eyebrow">Semaine du ${esc(r.weekLabel)}</p>
+    <h3>Ton récap BeRail</h3>
+    <div class="recap-stats">
+      <div><b>${r.posts.length}</b><span>BeRail</span></div>
+      <div><b>${r.reactions}</b><span>réactions</span></div>
+      <div><b>${r.mine.length}</b><span>à toi</span></div>
+      <div><b>${currentStreak()}</b><span>🔥 série</span></div>
+    </div>
+    ${r.star ? `<p class="recap-star">⭐ Le plus réagi : <b>${esc(r.star.userName)}</b> (${r.star.reactionTotal || 0} réactions)</p>` : ''}
+    <div class="recap-mosaic">${photos.map((p) => `<figure><img data-pid="${esc(p.id)}" alt=""><figcaption>${esc(p.userName)}</figcaption></figure>`).join('')}</div>
+    <div class="row"><button class="btn btn-ghost" data-close>Fermer</button><button class="btn btn-primary" id="recapSave">Enregistrer</button></div>
+  </div>`);
+  const save = $('#recapSave');
+  if (save) save.onclick = () => { toast('Récap enregistré (via capture d’écran)'); };
+}
+
+
+/* ---------- export ZIP (avant + arrière) ---------- */
+function dataUrlToBytes(dataUrl) {
+  const comma = dataUrl.indexOf(',');
+  const meta = dataUrl.slice(0, comma);
+  const b64 = dataUrl.slice(comma + 1);
+  const bin = atob(b64);
+  const out = new Uint8Array(bin.length);
+  for (let i = 0; i < bin.length; i++) out[i] = bin.charCodeAt(i);
+  return { bytes: out, ext: /png/i.test(meta) ? 'png' : /webp/i.test(meta) ? 'webp' : 'jpg' };
+}
+const CRC_TABLE = (() => {
+  const t = new Uint32Array(256);
+  for (let n = 0; n < 256; n++) {
+    let c = n;
+    for (let k = 0; k < 8; k++) c = (c & 1) ? (0xEDB88320 ^ (c >>> 1)) : (c >>> 1);
+    t[n] = c >>> 0;
+  }
+  return t;
+})();
+function crc32(u8) {
+  let c = 0xFFFFFFFF;
+  for (let i = 0; i < u8.length; i++) c = CRC_TABLE[(c ^ u8[i]) & 0xFF] ^ (c >>> 8);
+  return (c ^ 0xFFFFFFFF) >>> 0;
+}
+function makeZip(files) {
+  const enc = new TextEncoder();
+  const chunks = [];
+  const central = [];
+  let offset = 0;
+  const u16 = (n) => [n & 255, (n >> 8) & 255];
+  const u32 = (n) => [n & 255, (n >> 8) & 255, (n >> 16) & 255, (n >> 24) & 255];
+  for (const f of files) {
+    const name = enc.encode(f.name);
+    const data = f.bytes;
+    const crc = crc32(data);
+    const local = new Uint8Array([
+      0x50,0x4b,0x03,0x04, 20,0, 0,0, 0,0, 0,0, 0,0,0,0,
+      ...u32(crc), ...u32(data.length), ...u32(data.length),
+      ...u16(name.length), ...u16(0), ...name
+    ]);
+    chunks.push(local, data);
+    central.push({ name, crc, size: data.length, offset });
+    offset += local.length + data.length;
+  }
+  const cdStart = offset;
+  for (const c of central) {
+    const rec = new Uint8Array([
+      0x50,0x4b,0x01,0x02, 20,0, 20,0, 0,0, 0,0, 0,0,0,0,
+      ...u32(c.crc), ...u32(c.size), ...u32(c.size),
+      ...u16(c.name.length), ...u16(0), ...u16(0), ...u16(0), ...u16(0),
+      ...u32(0), ...u32(c.offset), ...c.name
+    ]);
+    chunks.push(rec); offset += rec.length;
+  }
+  const cdSize = offset - cdStart;
+  chunks.push(new Uint8Array([
+    0x50,0x4b,0x05,0x06, 0,0, 0,0,
+    ...u16(central.length), ...u16(central.length),
+    ...u32(cdSize), ...u32(cdStart), 0,0
+  ]));
+  return new Blob(chunks, { type: 'application/zip' });
+}
+async function exportAllMine() {
+  const mine = S.posts.filter((p) => p.mine);
+  if (!mine.length) return toast('Aucun BeRail à télécharger');
+  toast('Préparation du ZIP…');
+  const files = [];
+  for (const post of mine) {
+    const day = window.BerailDayKey(new Date(post.createdAt));
+    try {
+      const back = await window.BerailPhoto(post.id);
+      if (back) { const d = dataUrlToBytes(back); files.push({ name: `${day}_arriere.${d.ext}`, bytes: d.bytes }); }
+      if (post.flip) {
+        const front = await fetch(`https://sync-3626f-default-rtdb.europe-west1.firebasedatabase.app/berail/photos/${post.id}f.json`).then((r) => r.json()).catch(() => '');
+        if (front) { const d = dataUrlToBytes(front); files.push({ name: `${day}_avant.${d.ext}`, bytes: d.bytes }); }
+      }
+    } catch (_) {}
+  }
+  if (!files.length) return toast('Photos introuvables');
+  const blob = makeZip(files);
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = `berail-${new Date().toISOString().slice(0, 10)}.zip`;
+  document.body.appendChild(a); a.click();
+  setTimeout(() => { URL.revokeObjectURL(a.href); a.remove(); }, 1500);
+  toast(`${files.length} photo${files.length > 1 ? 's' : ''} téléchargée${files.length > 1 ? 's' : ''}`);
+}
+
+/* ---------- page leurre : bibliothèque ---------- */
+const DECOY_BOOKS = [
+  { t: 'Le Rouge et le Noir', a: 'Stendhal', c: 'Lettres', n: 'Rouge & Noir', hue: 350 },
+  { t: 'Les Misérables', a: 'Victor Hugo', c: 'Lettres', n: 'Misérables', hue: 210 },
+  { t: 'L\'Étranger', a: 'Albert Camus', c: 'Lettres', n: 'Étranger', hue: 40 },
+  { t: 'La Peste', a: 'Albert Camus', c: 'Lettres', n: 'Peste', hue: 20 },
+  { t: 'Bel-Ami', a: 'Maupassant', c: 'Lettres', n: 'Bel-Ami', hue: 280 },
+  { t: 'Le Père Goriot', a: 'Balzac', c: 'Lettres', n: 'Goriot', hue: 150 },
+  { t: 'Candide', a: 'Voltaire', c: 'Lettres', n: 'Candide', hue: 60 },
+  { t: 'L\'Avare', a: 'Molière', c: 'Lettres', n: 'Avare', hue: 100 },
+  { t: 'Les Fleurs du mal', a: 'Baudelaire', c: 'Lettres', n: 'Fleurs du mal', hue: 320 },
+  { t: 'Manuel d\'Histoire-Géo', a: '2de · Magnard', c: 'Histoire', n: 'Histoire-Géo', hue: 190 },
+  { t: 'Physique-Chimie 2de', a: 'Hachette Éducation', c: 'Sciences', n: 'Physique-Chimie', hue: 170 },
+  { t: 'Mathématiques 2de', a: 'Nathan', c: 'Maths', n: 'Maths', hue: 230 }
+];
+let decoyBuilt = false;
+function buildDecoy() {
+  if (decoyBuilt) return;
+  decoyBuilt = true;
+  const grid = document.getElementById('decoyGrid');
+  if (!grid) return;
+  grid.innerHTML = DECOY_BOOKS.map((b) => `<article class="book-card">
+    <div class="book-cover" style="--h:${b.hue}"><span class="book-t">${esc(b.n)}</span><small>${esc(b.a)}</small></div>
+    <div class="book-meta"><b>${esc(b.t)}</b><span>${esc(b.a)}</span><em>${esc(b.c)}</em></div>
+    <button class="book-btn">Aperçu</button>
+  </article>`).join('');
+}
+function showDecoy() {
+  buildDecoy();
+  const el = document.getElementById('screen-decoy');
+  if (!el) return;
+  el.classList.remove('hidden');
+  document.body.style.overflow = 'hidden';
+}
+function hideDecoy() {
+  const el = document.getElementById('screen-decoy');
+  if (el) el.classList.add('hidden');
+  document.body.style.overflow = '';
+}
+
 function renderFeed() {
   const el = $('#view-feed');
   const week = S.posts.length;
@@ -410,7 +657,7 @@ function renderFeed() {
     g.posts.push(p);
   }
   for (const g of groups) g.posts.sort((a, b) => (b.mine - a.mine) || b.createdAt.localeCompare(a.createdAt));
-  el.innerHTML = head + storiesRow() + (isRecapDay() ? recapCard() : '') + groups.map((g) => `
+  el.innerHTML = head + flameCard() + storiesRow() + (isRecapDay() ? recapCard() : '') + groups.map((g) => `
     <section class="day">
       <h3 class="day-label"><span>${esc(g.label)}</span><small>${g.posts.length} BeRail${g.posts.length > 1 ? 's' : ''}</small></h3>
       ${g.posts.map(postCard).join('')}
@@ -589,7 +836,9 @@ function renderMemories() {
   const el = $('#view-memories');
   el.innerHTML = `
     <div class="view-head"><p class="eyebrow">Les ${S.retentionDays} derniers jours</p><h2>Mémoires</h2><p>${mine.length} BeRail${mine.length > 1 ? 's' : ''} posté${mine.length > 1 ? 's' : ''} · télécharge ceux que tu veux garder</p></div>
-    ${recapCard()}
+
+    ${recapWeekCard()}
+    ${mine.length ? `<div class="export-row"><button class="btn btn-primary" id="exportAll"><span>⤓</span> Tout télécharger (avant + arrière)</button></div>` : ''}    ${recapCard()}
     ${mine.length ? `<div class="grid">${mine.map((p) => `
       <figure data-open="${p.id}">
         ${imgTag(p, 'BeRail')}
@@ -599,6 +848,8 @@ function renderMemories() {
       : `<div class="empty">Tes BeRail de la semaine apparaîtront ici.<br><br><span style="color:var(--muted)">Ils restent ${S.retentionDays} jours : télécharge ceux que tu veux garder.</span></div>`}`;
 
   { const orc = $('#openRecap'); if (orc) orc.onclick = openRecap; }
+  { const owr = $('#openWeeklyRecap'); if (owr) owr.onclick = openWeeklyRecap; }
+  { const exp = $('#exportAll'); if (exp) exp.onclick = exportAllMine; }
   $$('#view-memories figure').forEach((f) => {
     f.onclick = () => {
       const p = S.posts.find((x) => x.id === f.dataset.open);
@@ -652,18 +903,19 @@ document.addEventListener('load', (e) => {
 function renderProfile() {
   const mine = S.posts.filter((p) => p.mine);
   const reactions = mine.reduce((n, p) => n + (p.reactionTotal || 0), 0);
-  const isOwner = !!(S.user && S.user.owner);
+  const isOwner = !!(S.user && (S.user.owner || S.user.role === 'admin'));
+  const n = currentStreak();
   $('#view-profile').innerHTML = `
     <div class="view-head"><h2>Profil</h2><p>Ton identité dans cette classe</p></div>
     <div class="profile-card">
       <button class="av-edit" id="pAvatar" aria-label="Personnaliser ma photo de profil">${avatarHTML(S.user.name, S.user.id, 'xl')}<span class="av-pen">✎</span></button>
-      <div style="flex:1;min-width:0"><h2>${esc(S.user.name)}</h2><p>Classe # ${esc(S.klass.code)}${isOwner ? ' · organisateur' : ''}</p>
+      <div style="flex:1;min-width:0"><h2>${esc(S.user.name)}</h2><p>@${esc(S.user.username || '')} · Classe # ${esc(S.klass.code)}${isOwner ? ' · prof' : ''}</p>
         <button class="mini-btn" id="pAvatar2" style="margin-top:10px">🎨 Personnaliser mon avatar</button></div>
     </div>
     <div class="stat-row">
       <div class="stat"><b>${mine.length}</b><span>BeRail postés</span></div>
       <div class="stat"><b>${reactions}</b><span>réactions reçues</span></div>
-      <div class="stat"><b>${streakOf(S.user.id)}</b><span>🔥 jours de suite</span></div>
+      <div class="stat"><b>${n}</b><span>🔥 jours de suite</span></div>
     </div>
     ${badgesPanel()}
     <div class="panel">
@@ -674,7 +926,7 @@ function renderProfile() {
     </div>
     ${isOwner ? `<div class="panel">
       <h3>Moment du jour</h3>
-      <p>Tu es l'organisateur : lance le BeRail quand tu veux. Toute la classe reçoit une notification.</p>
+      <p>Tu es le prof : lance le BeRail quand tu veux. Toute la classe reçoit une notification.</p>
       <button class="btn btn-primary" style="width:100%" id="pMoment">${S.moment ? 'Relancer le moment' : '⚡ Lancer le moment'}</button>
     </div>` : ''}
     <div class="panel">
@@ -685,7 +937,7 @@ function renderProfile() {
     <div class="panel" id="notifPanel"></div>
     <div class="panel">
       <h3>Espace & nettoyage</h3>
-      <p>Chaque BeRail reste ${S.retentionDays} jours, puis il est effacé automatiquement pour libérer la place. Télécharge ceux que tu veux garder.</p>
+      <p>Chaque BeRail reste ${S.retentionDays} jours, puis il est effacé automatiquement.</p>
       ${isOwner ? '<button class="btn btn-ghost" style="width:100%;color:var(--danger)" id="pPurge">Vider les photos maintenant</button>' : ''}
     </div>
     <div class="panel">
@@ -707,7 +959,7 @@ function renderProfile() {
   $('#pCopy').onclick = () => copy(S.klass.code, 'Code copié');
   $('#pShare').onclick = classModal;
   if (isOwner) {
-    $('#pMoment').onclick = async () => {
+    const pm = $('#pMoment'); if (pm) pm.onclick = async () => {
       try {
         await API('/api/moment', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ token: S.token }) });
         pushServer('/moment', { token: S.token });
@@ -715,12 +967,13 @@ function renderProfile() {
         toast('⚡ Moment lancé');
       } catch (_) { toast('Impossible de lancer le moment'); }
     };
+    const pg = $('#pPurge'); if (pg) pg.onclick = purgeModal;
+    const pa = $('#pAccounts'); if (pa) pa.onclick = accountsModal;
+    const ps = $('#pStop'); if (ps) ps.onclick = stopSiteModal;
   }
-  if (isOwner) $('#pPurge').onclick = purgeModal;
   renderNotifPanel();
   $('#pLogout').onclick = logout;
-  $('#pCharter').onclick = charterModal;
-  if (isOwner) { $('#pAccounts').onclick = accountsModal; $('#pStop').onclick = stopSiteModal; }
+  const pc = $('#pCharter'); if (pc) pc.onclick = charterModal;
 }
 
 /* ---------- notifications ---------- */
@@ -813,7 +1066,17 @@ function purgeModal() {
 }
 
 /* ---------- capture ---------- */
-const cap = { phase: 'back', stream: null, back: null, front: null, photo: null };
+const cap = { phase: 'back', stream: null, back: null, front: null, photo: null, filter: 'none', timer: 0 };
+const FILTERS = {
+  none:    { label: 'Original', css: 'none' },
+  bw:      { label: 'N&B', css: 'grayscale(1) contrast(1.05)' },
+  sepia:   { label: 'Sépia', css: 'sepia(0.85) contrast(1.02)' },
+  vivid:   { label: 'Vif', css: 'saturate(1.45) contrast(1.08)' },
+  vintage: { label: 'Vintage', css: 'sepia(0.35) saturate(0.8) contrast(0.95) brightness(0.96)' },
+  cold:    { label: 'Froid', css: 'hue-rotate(-12deg) saturate(1.1) brightness(1.02)' },
+  warm:    { label: 'Chaud', css: 'sepia(0.22) saturate(1.25) brightness(1.03)' }
+};
+let flashOn = false;
 
 async function openCapture() {
   showScreen('screen-capture');
@@ -831,6 +1094,8 @@ function setPhaseUI() {
   $('#stepLabel').textContent = cap.phase === 'back' ? 'Caméra arrière' : 'Caméra avant';
   $('#captureHint').textContent = cap.phase === 'back' ? 'Photo arrière' : 'Maintenant, ton visage';
   $('#captureSub').textContent = cap.phase === 'back' ? '1 / 2' : '2 / 2';
+  const tl = $('#timerLabel'); if (tl) tl.textContent = cap.timer ? cap.timer + ' s' : 'Off';
+  const fb = $('#flashBtn'); if (fb) fb.classList.toggle('on', flashOn);
 }
 
 async function startCam(facing) {
@@ -859,28 +1124,89 @@ function grab() {
   return c;
 }
 
+function waitCountdown(seconds) {
+  return new Promise((resolve) => {
+    if (!seconds) return resolve();
+    const box = $('#countdownScreen');
+    const num = $('#countdownNum');
+    if (!box || !num) return resolve();
+    box.classList.remove('hidden');
+    let left = seconds;
+    num.textContent = String(left);
+    const tick = setInterval(() => {
+      left -= 1;
+      if (left <= 0) {
+        clearInterval(tick);
+        box.classList.add('hidden');
+        resolve();
+      } else {
+        num.textContent = String(left);
+        if (navigator.vibrate) navigator.vibrate(30);
+      }
+    }, 1000);
+    if (navigator.vibrate) navigator.vibrate(60);
+  });
+}
+
+async function flashBurst() {
+  if (!flashOn) return;
+  const el = document.createElement('div');
+  el.className = 'screen-flash';
+  document.body.appendChild(el);
+  await new Promise((r) => setTimeout(r, 130));
+  el.remove();
+}
+
 async function shutter() {
   if (cap.phase === 'back') {
+    await waitCountdown(cap.timer);
+    await flashBurst();
     cap.back = grab();
     cap.phase = 'front';
     setPhaseUI();
     try { await startCam('user'); }
     catch (_) { stopCam(); finishCapture(); }
   } else {
+    await waitCountdown(cap.timer);
+    await flashBurst();
     cap.front = grab();
     stopCam();
     finishCapture();
   }
 }
 
+function filteredCanvas(srcCanvas, name) {
+  const f = FILTERS[name] || FILTERS.none;
+  if (!f || f.css === 'none') return srcCanvas;
+  const c = document.createElement('canvas');
+  c.width = srcCanvas.width; c.height = srcCanvas.height;
+  const x = c.getContext('2d');
+  try { x.filter = f.css; } catch (_) {}
+  x.drawImage(srcCanvas, 0, 0);
+  return c;
+}
+
+function applyFilterToReview() {
+  if (!cap.back) return;
+  const base = compose(cap.back, cap.front || cap.back, true);
+  const filtered = filteredCanvas(base, cap.filter);
+  cap.photo = filtered.toDataURL('image/jpeg', 0.82);
+  const img = $('#reviewImg');
+  if (img) img.src = cap.photo;
+  document.querySelectorAll('#filterStrip .filter-thumb').forEach((b) => b.classList.toggle('on', b.dataset.filter === cap.filter));
+}
+
 function finishCapture() {
   const front = cap.front || cap.back;
-  cap.photo = compose(cap.back, front);
+  const base = compose(cap.back, front, true);
+  const filtered = filteredCanvas(base, cap.filter);
+  cap.photo = filtered.toDataURL('image/jpeg', 0.82);
   cap.hasFlip = !!(cap.front && cap.back && cap.front !== cap.back);
   $('#reviewImg').src = cap.photo;
   resetStickers();
   $('#reviewLate').classList.toggle('hidden', !(S.moment && Date.now() - S.moment.at > 2 * 60 * 1000));
   $('#review').classList.remove('hidden');
+  document.querySelectorAll('#filterStrip .filter-thumb').forEach((b) => b.classList.toggle('on', b.dataset.filter === cap.filter));
   showScreen('screen-capture');
 }
 
@@ -951,7 +1277,8 @@ async function publish() {
   try {
     const caption = $('#captionInput').value.trim();
     const front = cap.front || cap.back;
-    const main = bakeStickers(compose(cap.back, front, true)).toDataURL('image/jpeg', 0.8);
+    const painted = bakeStickers(compose(cap.back, front, true));
+    const main = filteredCanvas(painted, cap.filter).toDataURL('image/jpeg', 0.8);
     const photoFlip = cap.hasFlip ? bakeStickers(compose(cap.front, cap.back, true)).toDataURL('image/jpeg', 0.72) : '';
     const r = await API('/api/post', {
       method: 'POST', headers: { 'Content-Type': 'application/json' },
@@ -1109,6 +1436,32 @@ if (window.visualViewport) {
   };
   window.visualViewport.addEventListener('resize', fitReview);
   window.visualViewport.addEventListener('scroll', fitReview);
+}
+{
+  const tb = $('#timerBtn');
+  if (tb) tb.onclick = () => {
+    const cycle = [0, 3, 5, 10];
+    const i = (cycle.indexOf(cap.timer) + 1) % cycle.length;
+    cap.timer = cycle[i];
+    setPhaseUI();
+  };
+  const fb = $('#flashBtn');
+  if (fb) fb.onclick = () => { flashOn = !flashOn; setPhaseUI(); };
+  const strip = $('#filterStrip');
+  if (strip) strip.onclick = (e) => {
+    const b = e.target.closest('[data-filter]');
+    if (!b) return;
+    cap.filter = b.dataset.filter;
+    applyFilterToReview();
+  };
+  const trigger = $('#decoyTrigger');
+  if (trigger) trigger.addEventListener('click', (e) => { e.preventDefault(); showDecoy(); });
+  const exit = $('#decoyExit');
+  if (exit) {
+    let hold;
+    exit.addEventListener('pointerdown', () => { hold = setTimeout(hideDecoy, 1200); });
+    ['pointerup', 'pointerleave', 'pointercancel'].forEach((ev) => exit.addEventListener(ev, () => clearTimeout(hold)));
+  }
 }
 $('#flipCam').addEventListener('click', async () => {
   cap.phase = cap.phase === 'back' ? 'front' : 'back';
