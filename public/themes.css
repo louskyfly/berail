@@ -150,11 +150,19 @@ html[data-theme="foret"]{
 [data-theme="edito"] .theme-opt.on small{color:#cfcfc8}
 
 /* ── Noël : Ardoise noir et blanc + neige + guirlande ── */
-[data-theme="noel"] #app::before,[data-theme="noel"] #app::after{content:"";position:fixed;inset:0;pointer-events:none;z-index:25;
-  background-image:radial-gradient(2.5px 2.5px at 20px 30px,#fff,transparent),radial-gradient(2px 2px at 120px 90px,#fff,transparent),radial-gradient(3px 3px at 210px 160px,#fff,transparent),radial-gradient(2px 2px at 60px 210px,#fff,transparent),radial-gradient(2.5px 2.5px at 270px 40px,#fff,transparent),radial-gradient(1.5px 1.5px at 170px 240px,#fff,transparent);
-  background-size:300px 260px;opacity:.8;animation:neige 16s linear infinite}
-[data-theme="noel"] #app::after{background-size:220px 200px;opacity:.5;animation-duration:24s;filter:blur(.5px)}
-@keyframes neige{from{background-position:0 0}to{background-position:40px 260px}}
+/* Neige légère : quelques flocons doux, lents */
+[data-theme="noel"] #app::before{content:"";position:fixed;inset:0;pointer-events:none;z-index:25;
+  background-image:radial-gradient(circle at 40px 60px,rgba(255,255,255,.9) 1.6px,transparent 2.6px),radial-gradient(circle at 260px 210px,rgba(255,255,255,.7) 1.2px,transparent 2.2px),radial-gradient(circle at 150px 380px,rgba(255,255,255,.8) 2px,transparent 3px),radial-gradient(circle at 330px 470px,rgba(255,255,255,.6) 1.2px,transparent 2.2px);
+  background-size:380px 520px;opacity:.55;animation:neige 38s linear infinite}
+@keyframes neige{from{background-position:0 0}to{background-position:60px 520px}}
+/* Montagnes enneigées dans les bandes noires sur les côtés */
+@media (min-width:780px){
+[data-theme="noel"] body::before,[data-theme="noel"] body::after{content:"";position:fixed;top:0;bottom:0;width:calc((100vw - 720px) / 2);pointer-events:none;z-index:0;
+  background:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 400 600' preserveAspectRatio='xMidYMax slice'%3E%3Cdefs%3E%3ClinearGradient id='s' x1='0' y1='0' x2='0' y2='1'%3E%3Cstop offset='0' stop-color='#0d0f12'/%3E%3Cstop offset='1' stop-color='#1c2128'/%3E%3C/linearGradient%3E%3C/defs%3E%3Crect width='400' height='600' fill='url%28#s%29'/%3E%3Ccircle cx='300' cy='120' r='26' fill='#e9ecef' opacity='.85'/%3E%3Cpath d='M-20 600 L-20 330 L70 210 L130 290 L210 170 L300 300 L360 240 L430 320 L430 600Z' fill='#3a414b'/%3E%3Cpath d='M70 210 L95 244 L82 240 L70 252 L58 238 L44 246Z M210 170 L246 222 L228 214 L212 230 L196 214 L178 222Z M360 240 L384 272 L370 266 L358 278 L346 266Z' fill='#f4f5f7'/%3E%3Cpath d='M-20 600 L-20 420 L50 360 L120 430 L190 330 L270 420 L330 370 L430 450 L430 600Z' fill='#2a3038'/%3E%3Cpath d='M190 330 L222 372 L206 366 L192 380 L178 366 L162 374Z M50 360 L76 384 L62 382 L50 392 L38 382 L28 386Z M330 370 L356 392 L342 390 L330 400 L318 390Z' fill='#e6e9ec'/%3E%3Cpath d='M-20 600 L-20 500 L80 470 L180 510 L280 465 L430 515 L430 600Z' fill='#f4f5f7'/%3E%3Cpath d='M-20 600 L-20 540 L120 520 L240 548 L430 528 L430 600Z' fill='#dfe3e7'/%3E%3C/svg%3E") center bottom/cover no-repeat}
+[data-theme="noel"] body::before{left:0}
+[data-theme="noel"] body::after{right:0;transform:scaleX(-1)}
+[data-theme="noel"] #app{z-index:1}
+}
 [data-theme="noel"] .topbar::after{content:"";position:absolute;left:0;right:0;bottom:-14px;height:18px;pointer-events:none;z-index:2;
   background:
    radial-gradient(circle at 12px 11px,#ff3b3b 4px,transparent 5px) 0 0/96px 18px,
@@ -164,4 +172,4 @@ html[data-theme="foret"]{
    radial-gradient(ellipse 14px 8px at 12px 0,transparent 6px,#3a3f46 6px 7.5px,transparent 8px) 0 0/24px 18px;
   animation:guirlande 1.6s steps(2) infinite}
 @keyframes guirlande{50%{filter:brightness(1.5) saturate(1.3)}}
-@media (prefers-reduced-motion:reduce){[data-theme="noel"] #app::before,[data-theme="noel"] #app::after,[data-theme="noel"] .topbar::after{animation:none}}
+@media (prefers-reduced-motion:reduce){[data-theme="noel"] #app::before,[data-theme="noel"] .topbar::after{animation:none}}
