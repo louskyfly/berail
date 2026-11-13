@@ -1,7 +1,7 @@
 {
-  "name": "BeRail",
-  "short_name": "BeRail",
-  "description": "Le BeReal de ta classe, partageable par code.",
+  "name": "Biblio Manuels",
+  "short_name": "Biblio Manuels",
+  "description": "Tes manuels scolaires numériques.",
   "start_url": "/",
   "display": "standalone",
   "orientation": "portrait",
@@ -9,7 +9,17 @@
   "theme_color": "#f5f5f3",
   "lang": "fr",
   "icons": [
-    { "src": "/icon-180.png?v=2", "sizes": "180x180", "type": "image/png", "purpose": "any" },
-    { "src": "/icon-512.png?v=2", "sizes": "512x512", "type": "image/png", "purpose": "any maskable" }
+    {
+      "src": "/manuel-180.png?v=1",
+      "sizes": "180x180",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "/manuel-512.png?v=1",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
   ]
 }

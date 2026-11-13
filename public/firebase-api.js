@@ -53,8 +53,12 @@
   new MutationObserver((ms) => ms.forEach((m) => m.addedNodes.forEach((n) => n.nodeType === 1 && scan(n.parentNode || n)))).observe(document.documentElement, { childList: true, subtree: true });
   window.BerailPhoto = photoOf;
 
-  let meCache = null; let stoppedCache = null;
-  async function isStopped() { if (stoppedCache !== null) return stoppedCache; stoppedCache = !!(await get('site/stopped')); return stoppedCache; }
+  /* Lucas (compte « Lou ») est le seul administrateur. */
+  const SUPER_ID = 'b7fc15b8bc23';
+  let meCache = null; let stoppedCache = null; let stoppedAt = 0;
+  const stopActive = (s) => !!(s && (!s.until || s.until > Date.now()));
+  async function isStopped() { if (stoppedCache === null || Date.now() - stoppedAt > 30000) { stoppedCache = await get('site/stopped').catch(() => null); stoppedAt = Date.now(); } return stopActive(stoppedCache); }
+  async function addLog(code, k, w, t) { const id = Date.now().toString(36) + hex(3); return put(`log/${code}/${id}`, { at: Date.now(), k, w: String(w || '').slice(0, 24), t: String(t || '').slice(0, 160) }).catch(() => {}); }
 
   async function userFromToken(token) {
     if (!token || !/^[a-f0-9]{32}$/.test(token)) fail(401, 'unauthorized');
@@ -65,7 +69,7 @@
   }
   const klassOf = async (code) => (await get(`classes/${code}`)) || { code, owner: null, moment: null };
   const klassView = (k) => ({ code: k.code, owner: k.owner || null, moment: k.moment || null, ownerName: k.ownerName || null });
-  const publicUser = (u, k) => ({ id: u.id, name: u.name, username: u.username || null, classCode: u.classCode, owner: !!(k && k.owner === u.id), role: u.role || (k && k.owner === u.id ? 'admin' : 'student') });
+  const publicUser = (u, k) => ({ id: u.id, name: u.name, username: u.username || null, classCode: u.classCode, owner: !!(k && k.owner === u.id), role: k && k.owner === u.id ? 'admin' : 'student', superAdmin: u.id === SUPER_ID });
   async function listPosts(code) { const obj = (await get(`posts/${code}`)) || {}; return Object.values(obj).filter((p) => p && p.id); }
 
   function ageDays(iso) { const a = Date.parse(dayKey(new Date(iso)) + 'T00:00:00Z'); const b = Date.parse(dayKey() + 'T00:00:00Z'); return Math.round((b - a) / 86400000); }
@@ -81,9 +85,10 @@
 
   async function postView(p, viewer) {
     const reactions = {}; let total = 0, myReaction = null;
-    for (const [userId, emoji] of Object.entries(p.reactions || {})) { reactions[emoji] = (reactions[emoji] || 0) + 1; total++; if (viewer && userId === viewer.id) myReaction = emoji; }
+    const reactors = [];
+    for (const [userId, emoji] of Object.entries(p.reactions || {})) { reactions[emoji] = (reactions[emoji] || 0) + 1; total++; if (viewer && userId === viewer.id) myReaction = emoji; reactors.push({ userId, emoji, name: (p.rn || {})[userId] || null }); }
     const comments = Object.values(p.comments || {}).sort((a, b) => String(a.at).localeCompare(String(b.at))).map((c) => ({ name: c.name, text: c.text, at: c.at }));
-    return { id: p.id, shareCode: p.shareCode, userName: p.userName, userId: p.userId, photo: photoCache.get(p.id) || '', caption: p.caption || '', late: !!p.late, flip: !!p.flip, createdAt: p.createdAt, mine: !!(viewer && viewer.id === p.userId), reactions, myReaction, reactionTotal: total, comments, commentCount: comments.length };
+    return { id: p.id, shareCode: p.shareCode, userName: p.userName, userId: p.userId, photo: photoCache.get(p.id) || '', caption: p.caption || '', late: !!p.late, flip: !!p.flip, createdAt: p.createdAt, mine: !!(viewer && viewer.id === p.userId), reactions, myReaction, reactionTotal: total, reactors, comments, commentCount: comments.length };
   }
 
   function genPin() { return String(1000 + Math.floor(Math.random() * 9000)); }
@@ -145,17 +150,21 @@
     const route = url.pathname; const q = url.searchParams; const method = (opts.method || 'GET').toUpperCase();
     const body = opts.body ? JSON.parse(opts.body) : {};
 
-    if (route !== '/api/site' && route !== '/api/admin/unstop') { if (await isStopped()) fail(410, 'site_stopped'); }
-    if (method === 'GET' && route === '/api/site') return { stopped: !!(await get('site/stopped')) };
+    if (route !== '/api/site' && route !== '/api/admin/unstop' && route !== '/api/login-pin') {
+      if (await isStopped()) { const t = body.token || q.get('token'); const me = t ? await userFromToken(t).catch(() => null) : null; if (!me || me.id !== SUPER_ID) fail(410, 'site_stopped'); }
+    }
+    if (method === 'GET' && route === '/api/site') { const tk = q.get('token'); if (tk) { const me = await userFromToken(tk).catch(() => null); if (me && me.id === SUPER_ID) return { stopped: false }; } return { stopped: stopActive(await get('site/stopped')) }; }
     if (method === 'POST' && route === '/api/admin/stop') {
       const u = await userFromToken(body.token); const k = await klassOf(u.classCode);
-      if (!(k.owner === u.id || u.role === 'admin')) fail(403, 'owner_only');
-      await patch('', Object.assign({ site: { stopped: { at: nowIso(), by: u.id }, by: u.id } }, proof(u, body.token))); stoppedCache = true; return { ok: true };
+      if (k.owner !== u.id) fail(403, 'owner_only');
+      const mins = Math.max(0, Math.min(24 * 60, Number(body.minutes) || 0)); const stopped = { at: nowIso(), by: u.id }; if (mins) stopped.until = Date.now() + mins * 60000;
+      await patch('', Object.assign({ site: { stopped, by: u.id } }, proof(u, body.token))); stoppedCache = stopped; stoppedAt = Date.now();
+      addLog(u.classCode, 'admin', u.name, mins ? `Site fermé pour ${mins} min` : 'Site fermé'); return { ok: true };
     }
     if (method === 'POST' && route === '/api/admin/unstop') {
       const u = await userFromToken(body.token); const k = await klassOf(u.classCode);
-      if (!(k.owner === u.id || u.role === 'admin')) fail(403, 'owner_only');
-      await patch('', Object.assign({ site: { by: u.id } }, proof(u, body.token))); stoppedCache = false; return { ok: true };
+      if (k.owner !== u.id) fail(403, 'owner_only');
+      await patch('', Object.assign({ site: { by: u.id } }, proof(u, body.token))); stoppedCache = null; addLog(u.classCode, 'admin', u.name, 'Site rouvert'); return { ok: true };
     }
 
     if (method === 'POST' && route === '/api/setup') {
@@ -168,7 +177,8 @@
       let k = await get(`classes/${classCode}`);
       const name = cleanName(body.name || username) || username;
       let res;
-      if (!k) {
+      if (!k) fail(404, 'unknown_class');
+      if (false) {
         const keys = await newClassKeys(); const ownerId = uid(6);
         k = { code: classCode, name: classCode, owner: ownerId, ownerName: name, pub: keys.pub, createdAt: nowIso() }; await put(`classes/${classCode}`, k);
         const token = uid(16); const user = { id: ownerId, name, username, usernameNorm: un, classCode, role: 'admin', rk: keys.priv, createdAt: nowIso() };
@@ -178,6 +188,7 @@
         await put(`rosterEnc/${classCode}/${ownerId}`, await sealEntry(keys.pub, { u: username, n: name, p: pin, t: token, r: 'admin' }));
         res = { token, user };
       } else res = await createAccount({ username, pin, name, classCode, role: 'student', k });
+      addLog(classCode, 'join', name, `Nouveau compte : ${name} (@${username})`);
       meCache = res; return { token: res.token, user: publicUser(res.user, k), klass: klassView(k) };
     }
 
@@ -198,17 +209,18 @@
       }
       if (!tok) fail(401, 'bad_login');
       meCache = null; const u = await userFromToken(tok).catch(() => fail(410, 'account_gone'));
+      if (u.id !== SUPER_ID && await isStopped()) fail(410, 'site_stopped');
       const k = await klassOf(u.classCode); return { token: tok, user: publicUser(u, k), klass: klassView(k) };
     }
 
     if (route === '/api/admin/accounts' && method === 'GET') {
       const u = await userFromToken(q.get('token')); const k = await klassOf(u.classCode);
-      if (!(k.owner === u.id || u.role === 'admin')) fail(403, 'owner_only');
+      if (k.owner !== u.id) fail(403, 'owner_only');
       return { accounts: await listClassAccounts(u, q.get('token')) };
     }
     if (route === '/api/admin/accounts' && method === 'POST') {
       const u = await userFromToken(body.token); const k = await klassOf(u.classCode);
-      if (!(k.owner === u.id || u.role === 'admin')) fail(403, 'owner_only');
+      if (k.owner !== u.id) fail(403, 'owner_only');
       const username = String(body.username || '').trim().replace(/^@/, ''); const un = normUser(username);
       const pin = validPin(body.pin) ? String(body.pin).trim() : genPin(); const name = cleanName(body.name || username) || username;
       if (!validUsername(username)) fail(400, 'bad_username'); if (await findAccount(un)) fail(409, 'username_taken');
@@ -218,7 +230,7 @@
     }
     if (method === 'POST' && /^\/api\/admin\/accounts\/[^/]+\/reset-pin$/.test(route)) {
       const targetToken = decodeURIComponent(route.split('/')[4]); const u = await userFromToken(body.token); const k = await klassOf(u.classCode);
-      if (!(k.owner === u.id || u.role === 'admin')) fail(403, 'owner_only');
+      if (k.owner !== u.id) fail(403, 'owner_only');
       const tu = await get(`users/${targetToken}`); if (!tu || tu.classCode !== u.classCode) fail(404, 'not_found');
       const entries = await roster(u); const e = entries[tu.id]; if (!e || e.t !== targetToken) fail(404, 'not_found');
       const un = normUser(e.u || tu.username || tu.name); const pin = validPin(body.pin) ? String(body.pin).trim() : genPin();
@@ -229,7 +241,7 @@
     }
     if (method === 'DELETE' && /^\/api\/admin\/accounts\/[^/]+$/.test(route)) {
       const targetToken = decodeURIComponent(route.split('/')[4]); const u = await userFromToken(q.get('token') || body.token); const k = await klassOf(u.classCode);
-      if (!(k.owner === u.id || u.role === 'admin')) fail(403, 'owner_only');
+      if (k.owner !== u.id) fail(403, 'owner_only');
       const tu = await get(`users/${targetToken}`); if (!tu || tu.classCode !== u.classCode) fail(404, 'not_found');
       if (tu.id === k.owner) fail(400, 'cannot_delete_owner');
       const meTok = q.get('token') || body.token; const entries = await roster(u); const e = entries[tu.id] || {};
@@ -264,7 +276,7 @@
     }
     if (method === 'POST' && route === '/api/moment') {
       const u = await userFromToken(body.token); const k = await klassOf(u.classCode);
-      if (!(k.owner === u.id || u.role === 'admin')) fail(403, 'owner_only');
+      if (k.owner !== u.id) fail(403, 'owner_only');
       const moment = { at: Date.now(), by: u.name }; await put(`classes/${u.classCode}/moment`, moment); return { moment };
     }
     if (method === 'POST' && route === '/api/profile') {
@@ -282,33 +294,36 @@
     }
     if (method === 'POST' && route === '/api/purge') {
       const u = await userFromToken(body.token); const k = await klassOf(u.classCode);
-      if (!(k.owner === u.id || u.role === 'admin')) fail(403, 'owner_only');
+      if (k.owner !== u.id) fail(403, 'owner_only');
       return { removed: await cleanup(u.classCode, true), purgeHour: PURGE_HOUR };
     }
     if (method === 'POST' && route === '/api/post') {
       const u = await userFromToken(body.token); const photo = String(body.photo || '');
       if (!/^data:image\/(jpeg|png|webp);base64,/.test(photo)) fail(400, 'bad_photo'); if (photo.length > 1400000) fail(413, 'too_large');
       const k = await klassOf(u.classCode);
+      if (k.owner !== u.id) { const c = await get(`ctl/${u.classCode}`).catch(() => null); if (c && c.postsOff) fail(423, 'posts_off'); }
       const p = { id: uid(8), shareCode: shortCode(), userId: u.id, userName: u.name, classCode: u.classCode, caption: String(body.caption || '').slice(0, 140), late: !!(k.moment && Date.now() - k.moment.at > LATE_MS), createdAt: nowIso() };
       const flip = String(body.photoFlip || ''); if (/^data:image\/(jpeg|png|webp);base64,/.test(flip) && flip.length <= 1400000) p.flip = true;
       await put(`photos/${p.id}`, photo); if (p.flip) await put(`photos/${p.id}f`, flip);
       await put(`posts/${u.classCode}/${p.id}`, p); await put(`shares/${p.shareCode}`, { classCode: u.classCode, postId: p.id }); photoCache.set(p.id, photo);
       try { const today = dayKey(); if (k.moment && dayKey(new Date(k.moment.at)) === today) { const mineDay = await get(`stats/${u.classCode}/${u.id}/days/${today}`); if (!mineDay) { const others = (await listPosts(u.classCode)).filter((x) => x.id !== p.id && x.userId !== u.id && Date.parse(x.createdAt) >= k.moment.at); const status = p.late ? 'late' : (others.length ? 'ok' : 'first'); await patch(`stats/${u.classCode}/${u.id}`, { name: u.name, [`days/${today}`]: status }); await put(`momentDays/${u.classCode}/${today}`, true); } } } catch (_) {}
+      addLog(u.classCode, 'post', u.name, 'BeRail publié' + (p.late ? ' (en retard)' : ''));
       return { post: await postView(p, u) };
     }
     if (method === 'POST' && route === '/api/post/delete') {
       const u = await userFromToken(body.token); const k = await klassOf(u.classCode);
       const id = String(body.postId || ''); if (!/^[a-f0-9]{16}$/.test(id)) fail(404, 'not_found');
       const p = await get(`posts/${u.classCode}/${id}`); if (!p) return { ok: true };
-      if (p.userId !== u.id && !(k.owner === u.id || u.role === 'admin')) fail(403, 'not_yours');
+      if (p.userId !== u.id && k.owner !== u.id) fail(403, 'not_yours');
       await del(`photos/${id}`).catch(() => {}); await del(`photos/${id}f`).catch(() => {});
       if (p.shareCode) await del(`shares/${p.shareCode}`).catch(() => {});
       await del(`posts/${u.classCode}/${id}`); photoCache.delete(id);
+      addLog(u.classCode, 'delete', u.name, p.userId === u.id ? 'A supprimé son BeRail' : `A supprimé le BeRail de ${p.userName}`);
       return { ok: true };
     }
     if (method === 'POST' && route === '/api/react') {
       const u = await userFromToken(body.token); const pathP = `posts/${u.classCode}/${body.postId}`; const p = await get(pathP); if (!p) fail(404, 'not_found');
-      const emoji = String(body.emoji || '').slice(0, 4); const already = (p.reactions || {})[u.id] === emoji; await put(`${pathP}/reactions/${u.id}`, already ? null : emoji);
+      const emoji = String(body.emoji || '').slice(0, 4); const already = (p.reactions || {})[u.id] === emoji; await patch(pathP, { [`reactions/${u.id}`]: already ? null : emoji, [`rn/${u.id}`]: already ? null : u.name }); p.rn = Object.assign({}, p.rn, { [u.id]: u.name });
       p.reactions = Object.assign({}, p.reactions); if (already) delete p.reactions[u.id]; else p.reactions[u.id] = emoji; return { post: await postView(p, u) };
     }
     if (method === 'POST' && route === '/api/comment') {
@@ -325,4 +340,5 @@
   }
 
   window.BerailAPI = api; window.BerailDayKey = dayKey;
+  window.BerailDB = { get, put, patch, del, hex, addLog, proof, SUPER_ID, RSA, b64, unb64, openEntries, userFromToken };
 })();

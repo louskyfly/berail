@@ -7,15 +7,15 @@
 <meta name="theme-color" content="#0c0c0d" media="(prefers-color-scheme: dark)">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-<meta name="apple-mobile-web-app-title" content="BeRail">
-<title>BeRail</title>
-<link rel="manifest" href="/manifest.webmanifest">
-<link rel="apple-touch-icon" href="/icon-180.png?v=2">
-<link rel="icon" href="/icon-180.png?v=2">
+<meta name="apple-mobile-web-app-title" content="Biblio Manuels">
+<title>Biblio Manuels</title>
+<link rel="manifest" href="/manifest.webmanifest?v=3">
+<link rel="apple-touch-icon" href="/manuel-180.png?v=1">
+<link rel="icon" href="/manuel-180.png?v=1">
 <script>(function(){var t=localStorage.getItem('berail.theme')||'ardoise';if(t!=='classique')document.documentElement.setAttribute('data-theme',t);window.__theme=t;})();</script>
-<link rel="stylesheet" href="/styles.css?v=20261112f">
-<link rel="stylesheet" href="/classic.css?v=20261112f" id="classicCss">
-<link rel="stylesheet" href="/themes.css?v=20261112f">
+<link rel="stylesheet" href="/styles.css?v=20261113a">
+<link rel="stylesheet" href="/classic.css?v=20261113a" id="classicCss">
+<link rel="stylesheet" href="/themes.css?v=20261113a">
 <script>if(window.__theme!=='classique')document.getElementById('classicCss').disabled=true;</script>
 </head>
 <body>
@@ -68,7 +68,9 @@
       <div id="view-feed" class="view"></div>
       <div id="view-memories" class="view hidden"></div>
       <div id="view-profile" class="view hidden"></div>
+      <div id="view-messages" class="view hidden"></div>
     </main>
+    <button id="toTop" class="to-top" aria-label="Remonter en haut">↑</button>
 
     <nav class="tabbar">
       <button class="tab" data-view="feed" aria-pressed="true">
@@ -83,9 +85,10 @@
       <button class="tab" data-view="profile">
         <svg viewBox="0 0 24 24"><path d="M12 12a4 4 0 1 0 0-8 4 4 0 0 0 0 8zm0 2c-4 0-7 2-7 4v2h14v-2c0-2-3-4-7-4z"/></svg><span>Profil</span>
       </button>
-      <button class="tab" id="shareTab">
-        <svg viewBox="0 0 24 24"><path d="M14 3l7 7-7 7v-4.5C9 12.5 6 14 4 18c0-6 3-9 10-10V3z"/></svg><span>Partager</span>
+      <button class="tab" data-view="messages">
+        <svg viewBox="0 0 24 24"><path d="M4 4h16v12H8l-4 4z"/></svg><span>Messages</span>
       </button>
+      <button class="hidden" id="shareTab" aria-hidden="true" tabindex="-1"></button>
     </nav>
   </section>
 
@@ -185,9 +188,10 @@
   <div class="consent-inner stopped-inner"><p class="stopped-text">Cette page n’existe pas.</p></div>
 </div>
 
-<script src="/firebase-api.js?v=20261112f"></script>
-<script src="/recap.js?v=20261112f"></script>
-<script src="/app.js?v=20261112f"></script>
-<script src="/extras.js?v=20261112f"></script>
+<script src="/firebase-api.js?v=20261113a"></script>
+<script src="/recap.js?v=20261113a"></script>
+<script src="/app.js?v=20261113a"></script>
+<script src="/extras.js?v=20261113a"></script>
+<script src="/features.js?v=20261113a"></script>
 </body>
 </html>

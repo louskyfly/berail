@@ -59,12 +59,19 @@ function plannedMin(code, s, day) {
 }
 
 /* ---------- notifications ---------- */
-async function pushClass(code, payload, onlyUserId, exceptUserId) {
-  const subs = (await get(`push/${code}`)) || {};
+/* Lucas (compte « Lou ») est le seul administrateur. */
+const SUPER_ID = 'b7fc15b8bc23';
+const APP_TITLE = 'Biblio Manuels';
+async function pushClass(code, payload, onlyUserId, exceptUserId, force) {
+  const [subs0, ctl, mute] = await Promise.all([get(`push/${code}`), get(`ctl/${code}`), get(`mute/${code}`)]);
+  const subs = subs0 || {};
+  if (!force && ctl && ctl.notifsOff) return { sent: 0, gone: 0, failed: 0, err: 'notifs_off' };
+  payload = Object.assign({}, payload, { title: APP_TITLE });
   let sent = 0, gone = 0, failed = 0, err = '';
   await Promise.all(Object.entries(subs).map(async ([userId, s]) => {
     if (onlyUserId && userId !== onlyUserId) return;
     if (exceptUserId && userId === exceptUserId) return;
+    if (!onlyUserId && mute && mute[userId] > Date.now()) return;
     try {
       await webpush.sendNotification({ endpoint: s.endpoint, keys: { p256dh: s.p256dh, auth: s.auth } },
         JSON.stringify(payload), { TTL: 900, urgency: 'high' });
@@ -76,9 +83,19 @@ async function pushClass(code, payload, onlyUserId, exceptUserId) {
   }));
   return { sent, gone, failed, err };
 }
-const VERSION = '2026-11-12a';
+const VERSION = '2026-11-13a';
 const postedSent = new Set();
-const momentMsg = () => ({ title: "⚡ C'est l'heure du BeRail !", body: 'Tu as 2 minutes pour poster ta photo.', url: SITE + '/', tag: 'moment-' + Date.now() });
+const momentMsg = () => ({ title: APP_TITLE, body: '📘 Nouvel exercice disponible : à faire dans les 2 minutes.', url: SITE + '/', tag: 'moment-' + Date.now() });
+const joinedSent = new Set();
+async function addLog(code, k, w, t) {
+  const id = Date.now().toString(36) + crypto.randomBytes(3).toString('hex');
+  await put(`log/${code}/${id}`, { at: Date.now(), k, w: String(w || '').slice(0, 24), t: String(t || '').slice(0, 160) }).catch(() => {});
+}
+async function superFromToken(t) {
+  if (!/^[a-f0-9]{32}$/.test(t || '')) return null;
+  const u = await get(`users/${t}`);
+  return u && u.id === SUPER_ID ? u : null;
+}
 
 async function fireMoment(code, by = 'BeRail') {
   await put(`classes/${code}/moment`, { at: Date.now(), by });
@@ -161,7 +178,7 @@ async function overview() {
   });
 }
 const CODE = /^[A-Z0-9-]{3,12}$/;
-async function adminAction(b) {
+async function adminAction(b, su) {
   const code = String(b.code || '').toUpperCase();
   switch (b.action) {
     case 'overview': return { classes: await overview(), serverTime: Date.now() };
@@ -175,12 +192,16 @@ async function adminAction(b) {
       if (b.resetToday) await del(`fired/${code}`);
       return { ok: true, schedule: clean };
     }
-    case 'fire': { if (!CODE.test(code)) throw 400; return fireMoment(code, 'Admin'); }
+    case 'fire': { if (!CODE.test(code)) throw 400; await addLog(code, 'admin', su ? su.name : 'Admin', 'BeRail lancé à la main'); return fireMoment(code, 'Admin'); }
     case 'notify': {
       const title = String(b.title || 'BeRail').slice(0, 60), body = String(b.body || '').slice(0, 180);
       const codes = code === '*' ? Object.keys((await get('classes')) || {}) : [code];
       const res = {};
-      for (const c of codes) { res[c] = await pushClass(c, { title, body, url: SITE + '/', tag: 'msg-' + Date.now() }); await logPush(c, 'message', res[c]); }
+      for (const c of codes) {
+        if (b.announce) await put(`announce/${c}`, { t: body.slice(0, 300), at: Date.now(), by: su ? su.name : 'Admin' });
+        res[c] = await pushClass(c, { title, body, url: SITE + '/', tag: 'msg-' + Date.now() }, null, null, true);
+        await logPush(c, 'message', res[c]); await addLog(c, 'announce', su ? su.name : 'Admin', body.slice(0, 160));
+      }
       return res;
     }
     case 'createClass': {
@@ -242,7 +263,7 @@ const server = http.createServer(async (req, res) => {
     if (url.pathname === '/moment' || url.pathname === '/test') {
       const u = /^[a-f0-9]{32}$/.test(b.token || '') ? await get(`users/${b.token}`) : null;
       if (!u) return send(res, 401, { error: 'bad_token' });
-      if (url.pathname === '/test') return send(res, 200, await pushClass(u.classCode, { title: 'BeRail 🔔', body: 'Les notifications marchent sur cet appareil !', url: SITE + '/', tag: 'test-' + Date.now() }, u.id));
+      if (url.pathname === '/test') return send(res, 200, await pushClass(u.classCode, { title: APP_TITLE, body: 'Les notifications marchent sur cet appareil.', url: SITE + '/', tag: 'test-' + Date.now() }, u.id));
       const k = await get(`classes/${u.classCode}`);
       if (!k || k.owner !== u.id) return send(res, 403, { error: 'owner_only' });
       const r = await pushClass(u.classCode, momentMsg());
@@ -258,13 +279,24 @@ const server = http.createServer(async (req, res) => {
       const p = await get(`posts/${u.classCode}/${id}`);
       if (!p || p.userId !== u.id || Date.now() - Date.parse(p.createdAt) > 10 * 60 * 1000) return send(res, 200, { skipped: true });
       postedSent.add(id); if (postedSent.size > 5000) postedSent.clear();
-      const r = await pushClass(u.classCode, { title: `📸 ${u.name} a posté son BeRail`, body: p.caption ? String(p.caption).slice(0, 80) : 'Va voir sa photo !', url: SITE + '/', tag: 'post-' + id }, null, u.id);
+      const r = await pushClass(u.classCode, { title: APP_TITLE, body: `${u.name} a ajouté une nouvelle page.`, url: SITE + '/', tag: 'post-' + id }, null, u.id);
       await logPush(u.classCode, 'post', r).catch(() => {});
       return send(res, 200, r);
     }
+    if (url.pathname === '/joined') {
+      const u = /^[a-f0-9]{32}$/.test(b.token || '') ? await get(`users/${b.token}`) : null;
+      if (!u || joinedSent.has(u.id) || Date.now() - Date.parse(u.createdAt) > 15 * 60 * 1000) return send(res, 200, { skipped: true });
+      joinedSent.add(u.id);
+      const classes = (await get('classes')) || {};
+      const home = Object.values(classes).find((k) => k && k.owner === SUPER_ID);
+      await addLog(u.classCode, 'join', u.name, `Nouveau compte : ${u.name} (@${u.username || '?'}) dans ${u.classCode}`);
+      if (!home) return send(res, 200, { skipped: true });
+      return send(res, 200, await pushClass(home.code, { body: `👤 Nouveau compte : ${u.name} (${u.classCode})`, url: SITE + '/', tag: 'join-' + u.id }, SUPER_ID, null, true));
+    }
     if (url.pathname === '/admin') {
-      if (!checkKey(b.key)) return send(res, 401, { error: 'bad_key' });
-      return send(res, 200, await adminAction(b));
+      const su = b.token ? await superFromToken(b.token) : null;
+      if (!su && !checkKey(b.key)) return send(res, 401, { error: 'bad_key' });
+      return send(res, 200, await adminAction(b, su));
     }
     return send(res, 404, { error: 'not_found' });
   } catch (e) {

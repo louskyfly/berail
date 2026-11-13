@@ -145,15 +145,13 @@ async function join(create) {
     localStorage.setItem('berail.token', r.token);
     localStorage.setItem('berail.pseudo', (r.user && r.user.username) || pseudo);
     S.user = r.user; S.klass = r.klass; S.moment = r.klass.moment;
+    if (mode !== 'login') pushServer('/joined', { token: r.token });
     $('#inPass').value = '';
     await afterLogin();
   } catch (e) {
     const c = e.data && e.data.error;
     if (c === 'unknown_class') {
-      err.textContent = `La classe « ${code} » n'existe pas encore.`;
-      const cb = $('#createBtn');
-      cb.classList.remove('hidden');
-      cb.textContent = `Créer la classe « ${code} »`;
+      err.textContent = `La classe « ${code} » n'existe pas. Demande le bon code à l'administrateur.`;
     } else if (c === 'site_stopped') { showStopped(); return; }
     else err.textContent = AUTH_ERR[c] || (mode === 'login' ? 'Connexion impossible. Vérifie le réseau.' : 'Création impossible. Vérifie le réseau.');
     err.classList.remove('hidden');
@@ -628,8 +626,9 @@ const THEMES = [
   { id: 'edito', name: 'Éditorial', desc: 'Magazine, point rouge', sw: ['#fafaf7', '#0e0e0e', '#d7263d'] },
   { id: 'foret', name: 'Forêt', desc: 'Vert sauge et sable', sw: ['#131a16', '#8fb38a', '#e6d8b8'] },
   { id: 'classique', name: 'Couleurs', desc: 'Violet et rose', sw: ['#5b4bff', '#ff4f8b', '#22c3b5'] },
+  { id: 'noel', name: 'Noël', desc: 'Sapin, rouge et neige', sw: ['#0f2a1f', '#d42a3a', '#f2c14e'] },
 ];
-const THEME_BAR = { ardoise: '#121417', edito: '#fafaf7', foret: '#131a16' };
+const THEME_BAR = { ardoise: '#121417', edito: '#fafaf7', foret: '#131a16', noel: '#0f2a1f' };
 function currentTheme() { return localStorage.getItem('berail.theme') || 'ardoise'; }
 function applyTheme(id) {
   localStorage.setItem('berail.theme', id);
@@ -964,7 +963,8 @@ async function publish() {
     setView('feed');
     toast(r.post.late ? 'Publié — mais en retard 😅' : 'BeRail publié ⚡');
   } catch (e) {
-    toast(e.data && e.data.error === 'too_large' ? 'Photo trop lourde' : 'Publication impossible');
+    const ec = e.data && e.data.error;
+    toast(ec === 'too_large' ? 'Photo trop lourde' : ec === 'posts_off' ? "L'administrateur a coupé les posts pour l'instant" : 'Publication impossible');
   } finally {
     publishing = false;
     if (btn) { btn.disabled = false; btn.textContent = 'Publier'; }
@@ -1064,7 +1064,7 @@ async function boot() {
   const shared = new URLSearchParams(location.search).get('p');
   if (shared) { showShared(shared.trim().toUpperCase()); return; }
 
-  try { const st = await API('/api/site'); if (st && st.stopped) { showStopped(); return; } } catch (_) {}
+  try { const st = await API('/api/site' + (S.token ? '?token=' + encodeURIComponent(S.token) : '')); if (st && st.stopped) { showStopped(); return; } } catch (_) {}
   if (!S.token) {
     showScreen('screen-auth');
     const qs = new URLSearchParams(location.search);

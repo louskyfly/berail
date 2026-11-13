@@ -4,8 +4,8 @@ self.addEventListener('activate', (e) => e.waitUntil(self.clients.claim()));
 self.addEventListener('push', (e) => {
   let d = {};
   try { d = e.data ? e.data.json() : {}; } catch (_) { d = { body: e.data && e.data.text() }; }
-  e.waitUntil(self.registration.showNotification(d.title || 'BeRail', {
-    body: d.body || '', icon: '/icon-180.png', badge: '/icon-180.png',
+  e.waitUntil(self.registration.showNotification(d.title || 'Biblio Manuels', {
+    body: d.body || '', icon: '/manuel-180.png', badge: '/manuel-180.png',
     tag: d.tag || ('berail-' + Date.now()), data: { url: d.url || '/' }
   }));
 });
