@@ -589,34 +589,7 @@ async function exportAllMine() {
 }
 
 /* ---------- page leurre : bibliothèque ---------- */
-const DECOY_BOOKS = [
-  { t: 'Le Rouge et le Noir', a: 'Stendhal', c: 'Lettres', n: 'Rouge & Noir', hue: 350 },
-  { t: 'Les Misérables', a: 'Victor Hugo', c: 'Lettres', n: 'Misérables', hue: 210 },
-  { t: 'L\'Étranger', a: 'Albert Camus', c: 'Lettres', n: 'Étranger', hue: 40 },
-  { t: 'La Peste', a: 'Albert Camus', c: 'Lettres', n: 'Peste', hue: 20 },
-  { t: 'Bel-Ami', a: 'Maupassant', c: 'Lettres', n: 'Bel-Ami', hue: 280 },
-  { t: 'Le Père Goriot', a: 'Balzac', c: 'Lettres', n: 'Goriot', hue: 150 },
-  { t: 'Candide', a: 'Voltaire', c: 'Lettres', n: 'Candide', hue: 60 },
-  { t: 'L\'Avare', a: 'Molière', c: 'Lettres', n: 'Avare', hue: 100 },
-  { t: 'Les Fleurs du mal', a: 'Baudelaire', c: 'Lettres', n: 'Fleurs du mal', hue: 320 },
-  { t: 'Manuel d\'Histoire-Géo', a: '2de · Magnard', c: 'Histoire', n: 'Histoire-Géo', hue: 190 },
-  { t: 'Physique-Chimie 2de', a: 'Hachette Éducation', c: 'Sciences', n: 'Physique-Chimie', hue: 170 },
-  { t: 'Mathématiques 2de', a: 'Nathan', c: 'Maths', n: 'Maths', hue: 230 }
-];
-let decoyBuilt = false;
-function buildDecoy() {
-  if (decoyBuilt) return;
-  decoyBuilt = true;
-  const grid = document.getElementById('decoyGrid');
-  if (!grid) return;
-  grid.innerHTML = DECOY_BOOKS.map((b) => `<article class="book-card">
-    <div class="book-cover" style="--h:${b.hue}"><span class="book-t">${esc(b.n)}</span><small>${esc(b.a)}</small></div>
-    <div class="book-meta"><b>${esc(b.t)}</b><span>${esc(b.a)}</span><em>${esc(b.c)}</em></div>
-    <button class="book-btn">Aperçu</button>
-  </article>`).join('');
-}
 function showDecoy() {
-  buildDecoy();
   const el = document.getElementById('screen-decoy');
   if (!el) return;
   el.classList.remove('hidden');
@@ -1454,12 +1427,11 @@ if (window.visualViewport) {
     cap.filter = b.dataset.filter;
     applyFilterToReview();
   };
-  const trigger = $('#decoyTrigger');
-  if (trigger) trigger.addEventListener('click', (e) => { e.preventDefault(); showDecoy(); });
   const exit = $('#decoyExit');
   if (exit) {
     let hold;
-    exit.addEventListener('pointerdown', () => { hold = setTimeout(hideDecoy, 1200); });
+    // sortie cachée réservée à l'administrateur (aperçu) ; les élèves restent sur la page tant que le mode est actif
+    exit.addEventListener('pointerdown', () => { hold = setTimeout(() => { if (window.BERAIL_IS_SUPER && window.BERAIL_IS_SUPER()) hideDecoy(); }, 1200); });
     ['pointerup', 'pointerleave', 'pointercancel'].forEach((ev) => exit.addEventListener(ev, () => clearTimeout(hold)));
   }
 }

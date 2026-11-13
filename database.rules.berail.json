@@ -1313,6 +1313,9 @@
      "postsOff": {
       ".validate": "newData.isBoolean()"
      },
+     "decoy": {
+      ".validate": "newData.isBoolean()"
+     },
      "by": {
       ".validate": "newData.isString() && newData.val().length <= 16"
      },

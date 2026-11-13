@@ -5,6 +5,7 @@
   const X = window.BerailDB;
   const DBURL = 'https://sync-3626f-default-rtdb.europe-west1.firebasedatabase.app/berail';
   const isSuper = () => !!(S.user && S.user.id === X.SUPER_ID);
+  window.BERAIL_IS_SUPER = isSuper;
   const code = () => S.klass && S.klass.code;
   const fdt = (ms) => new Date(ms).toLocaleString('fr-FR', { timeZone: 'Europe/Paris', weekday: 'short', day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' });
   const fhm = (ms) => new Date(ms).toLocaleTimeString('fr-FR', { timeZone: 'Europe/Paris', hour: '2-digit', minute: '2-digit' });
@@ -193,6 +194,9 @@
     if (!$('#screen-stopped').classList.contains('hidden') && !isSuper()) { location.reload(); return; }
     const changed = JSON.stringify(a) !== JSON.stringify(U.announce);
     U.announce = a; U.ctl = c || {}; U.mute = Number(m) || 0;
+    const dz = $('#screen-decoy');
+    if (U.ctl.decoy && !isSuper()) showDecoy();
+    else if (dz && !dz.classList.contains('hidden') && !isSuper()) hideDecoy();
     if (changed && S.view === 'feed') renderFeed();
   }
   const baseRefresh = refresh;
@@ -288,12 +292,15 @@
       body.innerHTML = `
         <div class="adm-line"><div><b>Notifications</b><span>${U.ctl.notifsOff ? 'Coupées pour toute la classe' : 'Actives'}</span></div><button class="mini-btn ${U.ctl.notifsOff ? '' : 'danger'}" id="aNotif">${U.ctl.notifsOff ? 'Rallumer' : 'Couper'}</button></div>
         <div class="adm-line"><div><b>Posts de BeRail</b><span>${U.ctl.postsOff ? 'En pause' : 'Ouverts'}</span></div><button class="mini-btn ${U.ctl.postsOff ? '' : 'danger'}" id="aPosts">${U.ctl.postsOff ? 'Rouvrir' : 'Couper'}</button></div>
+        <div class="adm-line"><div><b>Mode Biblio</b><span>${U.ctl.decoy ? 'Actif : la classe voit la fausse bibliothèque' : 'Désactivé'}</span></div><div class="chips-row"><button class="mini-btn" id="aDecoyPrev">Aperçu</button><button class="mini-btn ${U.ctl.decoy ? '' : 'danger'}" id="aDecoy">${U.ctl.decoy ? 'Couper' : 'Activer'}</button></div></div>
         <div class="adm-line"><div><b>Site</b><span>${closed ? (site.until ? `Fermé jusqu’à ${fhm(site.until)}` : 'Fermé') : 'Ouvert'}</span></div>
           ${closed ? '<button class="mini-btn" id="aOpen">Rouvrir</button>' : `<div class="chips-row">${[[55, '1 cours'], [120, '2 h'], [0, 'Sans limite']].map(([m, l]) => `<button class="mini-btn danger" data-close-site="${m}">${l}</button>`).join('')}</div>`}</div>
         <p class="small-note">Site fermé : tout le monde voit « Cette page n’existe pas », sauf toi.</p>
         <div class="row" style="margin-top:12px"><button class="btn btn-primary" id="aFire">⚡ Lancer un BeRail</button></div>
         <div class="row" style="margin-top:10px"><button class="btn btn-ghost" id="aAcc">Comptes & codes</button><button class="btn btn-ghost" id="aPurge">Vider les photos</button></div>`;
       $('#aNotif').onclick = async () => { const v = !U.ctl.notifsOff; try { await ownerWrite({ [`ctl/${code()}/notifsOff`]: v, [`ctl/${code()}/by`]: S.user.id }); X.addLog(code(), 'admin', S.user.name, v ? 'Notifications coupées' : 'Notifications rallumées'); toast(v ? 'Notifications coupées' : 'Notifications rallumées'); } catch (_) { toast('Impossible'); } renderAdmin(); };
+      $('#aDecoy').onclick = async () => { const v = !U.ctl.decoy; try { await ownerWrite({ [`ctl/${code()}/decoy`]: v, [`ctl/${code()}/by`]: S.user.id }); X.addLog(code(), 'admin', S.user.name, v ? 'Mode Biblio activé' : 'Mode Biblio coupé'); toast(v ? 'Mode Biblio activé' : 'Mode Biblio coupé'); } catch (_) { toast('Impossible'); } renderAdmin(); };
+      $('#aDecoyPrev').onclick = () => { showDecoy(); toast('Appui long sur « Aide » pour sortir'); };
       $('#aPosts').onclick = async () => { const v = !U.ctl.postsOff; try { await ownerWrite({ [`ctl/${code()}/postsOff`]: v, [`ctl/${code()}/by`]: S.user.id }); X.addLog(code(), 'admin', S.user.name, v ? 'Posts coupés' : 'Posts rouverts'); toast(v ? 'Posts coupés' : 'Posts rouverts'); } catch (_) { toast('Impossible'); } renderAdmin(); };
       $$('[data-close-site]').forEach((b) => b.onclick = async () => {
         const m = Number(b.dataset.closeSite);

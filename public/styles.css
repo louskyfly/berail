@@ -577,3 +577,10 @@ input[type="time"]{font:inherit;color:var(--fg);background:var(--surface-2);bord
 .book-btn{border:1px solid #d8d0bf;background:#fff;color:#1d1a14;border-radius:8px;padding:7px 0;font-size:12px;font-weight:600}
 .decoy-foot{padding:24px clamp(16px,4vw,44px) 40px;color:#968d7b;font-size:11px;border-top:1px solid #e6dfd0}
 .decoy-exit{cursor:default;user-select:none;-webkit-user-select:none}
+
+/* Mode Biblio : en cours de développement */
+.decoy-wip{padding:24px clamp(16px,4vw,44px) 40px}
+.decoy-wip-card{max-width:520px;border:1px dashed #d8d0bf;border-radius:14px;background:#fffdf8;padding:28px 22px;text-align:center;color:#5c5546}
+.decoy-wip-card span{font-size:34px;display:block;margin-bottom:8px}
+.decoy-wip-card b{display:block;color:#1d1a14;font-size:18px;margin-bottom:6px;font-family:Georgia,"Times New Roman",serif}
+.decoy-wip-card p{margin:0;font-size:13px;line-height:1.5}
