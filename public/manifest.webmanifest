@@ -10,13 +10,13 @@
   "lang": "fr",
   "icons": [
     {
-      "src": "/manuel-180.png?v=1",
+      "src": "/bm-icon-180.png",
       "sizes": "180x180",
       "type": "image/png",
       "purpose": "any"
     },
     {
-      "src": "/manuel-512.png?v=1",
+      "src": "/bm-icon-512.png",
       "sizes": "512x512",
       "type": "image/png",
       "purpose": "any maskable"
