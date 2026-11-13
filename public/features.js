@@ -62,8 +62,11 @@
     await Promise.all(all.map(async (c) => { c.last = await lastMsg(c.id); }));
     all.sort((a, b) => (b.kind === 'class') - (a.kind === 'class') || ((b.last && b.last.at) || b.at || 0) - ((a.last && a.last.at) || a.at || 0));
     U.convs = all; U.invites = inv;
+    recount();
+  }
+  function recount() {
     const s = seen();
-    U.unread = inv.length + all.filter((c) => c.last && c.last.u !== S.user.id && c.last.at > (s[c.id] || 0)).length;
+    U.unread = (U.invites || []).length + (U.convs || []).filter((c) => c.last && c.last.u !== S.user.id && Number(c.last.at) > Number(s[c.id] || 0)).length;
     badge();
   }
   function badge() {
@@ -141,7 +144,13 @@
     el.innerHTML = `<div class="chat-head"><button class="mini-btn" id="chatBack">‹ Retour</button><div><b>${esc(c.name)}</b><span>${esc(members)}</span></div></div>
       <div class="chat-log" id="chatLog">${msgs.map((m) => `<div class="bubble ${m.u === S.user.id ? 'me' : ''}">${m.u === S.user.id ? '' : `<b>${esc(m.n)}</b>`}${esc(m.t)}<small>${fhm(m.at)}</small></div>`).join('') || '<p class="muted-c">Aucun message. Lance la conversation !</p>'}</div>
       ${c.readOnly ? '<p class="small-note" style="text-align:center">Lecture seule (administrateur)</p>' : `<form class="chat-form" id="chatForm"><input id="chatIn" maxlength="1000" placeholder="Message…" autocomplete="off"><button aria-label="Envoyer">➤</button></form>`}`;
-    if (msgs.length) markSeen(c.id, msgs[msgs.length - 1].at);
+    if (msgs.length) {
+      const lastAt = msgs[msgs.length - 1].at;
+      markSeen(c.id, lastAt);
+      const cv = (U.convs || []).find((x) => x.id === c.id);
+      if (cv && (!cv.last || Number(cv.last.at) < Number(lastAt))) cv.last = msgs[msgs.length - 1];
+      recount();
+    }
     const log = $('#chatLog'); log.scrollTop = log.scrollHeight;
     $('#views').scrollTop = $('#views').scrollHeight;
     $('#chatBack').onclick = () => { U.open = null; delete el.dataset.sig; renderMessages(); };
