@@ -80,11 +80,11 @@
   async function renderMessages() {
     const el = $('#view-messages');
     if (U.open) return renderChat();
-    el.innerHTML = `<div class="view-head"><h2>Messages</h2><p class="msg-notice">🔎 L’administrateur peut lire les conversations.</p></div><p class="muted-c">Chargement…</p>`;
+    el.innerHTML = `<div class="view-head"><h2>Messages</h2></div><p class="muted-c">Chargement…</p>`;
     try { await loadConvs(); } catch (_) { el.querySelector('.muted-c').textContent = 'Impossible de charger les messages.'; return; }
     if (S.view !== 'messages' || U.open) return;
     const s = seen();
-    el.innerHTML = `<div class="view-head"><h2>Messages</h2><p class="msg-notice">🔎 L’administrateur peut lire les conversations.</p></div>
+    el.innerHTML = `<div class="view-head"><h2>Messages</h2></div>
       <button class="btn btn-primary" style="width:100%;margin-bottom:14px" id="mNew">＋ Nouvelle conversation</button>
       ${U.invites.length ? `<h3 class="day-label"><span>Invitations</span></h3>${U.invites.map((v) => `
         <div class="conv invite"><div class="conv-main"><b>${esc(v.name)}</b><span>${esc(v.byName || 'Quelqu’un')} t’invite · ${Object.keys(v.members).length} membre${Object.keys(v.members).length > 1 ? 's' : ''}</span></div>
