@@ -1,44 +1,44 @@
 /* ═════ Thèmes au choix (Profil > Apparence) ═════ */
 
 /* ───── Ardoise ───── */
-html[data-theme="ardoise"]{
+html:is([data-theme="ardoise"],[data-theme="noel"]){
   --bg:#121417;--surface:#1a1d21;--surface-2:#23272d;--fg:#f4f5f7;--muted:#9a9fa8;
   --line:#23272d;--line-strong:#363b43;--primary:#f4f5f7;--primary-fg:#121417;
   --brand:#f4f5f7;--brand-2:#f4f5f7;--brand-soft:#2a2e35;--grad:linear-gradient(#f4f5f7,#f4f5f7);
   --danger:#ff6b6b;--danger-bg:#2c1717;--ok:#3ccf7a;--shadow:none;color-scheme:dark}
-[data-theme="ardoise"] body{background:#121417}
-[data-theme="ardoise"] body{font-family:"Helvetica Neue",-apple-system,Arial,sans-serif}
-[data-theme="ardoise"] .logo-sm,[data-theme="ardoise"] .brand{font-weight:900;text-transform:uppercase;letter-spacing:-.06em}
-[data-theme="ardoise"] .brand-dot{background:#f4f5f7}
-[data-theme="ardoise"] .chip{background:transparent;border:1px solid var(--line-strong);font-weight:800;letter-spacing:.08em}
-[data-theme="ardoise"] .topbar,[data-theme="ardoise"] .tabbar{background:rgba(18,20,23,.88)}
-[data-theme="ardoise"] .view-head h2{font-size:54px;font-weight:900;text-transform:uppercase;letter-spacing:-.07em;line-height:.88}
-[data-theme="ardoise"] .eyebrow,[data-theme="ardoise"] .view-head p{text-transform:uppercase;letter-spacing:.08em;font-weight:700;font-size:12px}
-[data-theme="ardoise"] .moment{background:#f4f5f7;color:#121417;border-radius:14px}
-[data-theme="ardoise"] .moment .moment-txt{text-transform:uppercase;font-weight:900;letter-spacing:-.02em}
-[data-theme="ardoise"] .moment button{background:#121417;color:#f4f5f7;text-transform:uppercase;font-weight:900}
-[data-theme="ardoise"] .moment.urgent{background:#ff6b6b;color:#121417}
-[data-theme="ardoise"] .day-label{text-transform:uppercase;font-weight:900;letter-spacing:-.02em}
-[data-theme="ardoise"] .story-ring{background:#f4f5f7}
-[data-theme="ardoise"] .post{border:0;border-radius:20px;isolation:isolate}
-[data-theme="ardoise"] .post::before{content:"";position:absolute;inset:-40px;z-index:-1;background:var(--glow,none) center/cover;filter:blur(40px) saturate(1.6);opacity:.45}
-[data-theme="ardoise"] .post::after{content:"";position:absolute;inset:0;z-index:-1;background:linear-gradient(transparent 40%,rgba(18,20,23,.6))}
-[data-theme="ardoise"] .post-who b{text-transform:uppercase;font-weight:900}
-[data-theme="ardoise"] .badge-late{background:transparent;border:1px solid #fff;color:#fff;font-weight:900;letter-spacing:.08em}
-[data-theme="ardoise"] .react{background:rgba(255,255,255,.1);font-weight:800}
-[data-theme="ardoise"] .react.on{background:#f4f5f7;border-color:#f4f5f7}
-[data-theme="ardoise"] .react.on b{color:#121417}
-[data-theme="ardoise"] .comment-form input{background:rgba(255,255,255,.08)}
-[data-theme="ardoise"] .btn-primary,[data-theme="ardoise"] .comment-form button{background:#f4f5f7;color:#121417;font-weight:900;text-transform:uppercase;letter-spacing:.02em}
-[data-theme="ardoise"] .tab{text-transform:uppercase;font-weight:800;letter-spacing:.06em;font-size:10px}
-[data-theme="ardoise"] .tab[aria-pressed="true"]{color:#fff}
-[data-theme="ardoise"] .shutter-ring{border:3px solid #fff}
-[data-theme="ardoise"] .shutter-core{background:#fff}
-[data-theme="ardoise"] .profile-card h2,[data-theme="ardoise"] .panel h3{text-transform:uppercase;font-weight:900;letter-spacing:-.02em}
-[data-theme="ardoise"] .stat b{font-weight:900}
-[data-theme="ardoise"] .code-big,[data-theme="ardoise"] .share-code{color:#fff;font-weight:900}
-[data-theme="ardoise"] .mini-btn{background:var(--surface-2);color:#fff}
-[data-theme="ardoise"] .toast{background:#f4f5f7;color:#121417}
+:is([data-theme="ardoise"],[data-theme="noel"]) body{background:#121417}
+:is([data-theme="ardoise"],[data-theme="noel"]) body{font-family:"Helvetica Neue",-apple-system,Arial,sans-serif}
+:is([data-theme="ardoise"],[data-theme="noel"]) .logo-sm,:is([data-theme="ardoise"],[data-theme="noel"]) .brand{font-weight:900;text-transform:uppercase;letter-spacing:-.06em}
+:is([data-theme="ardoise"],[data-theme="noel"]) .brand-dot{background:#f4f5f7}
+:is([data-theme="ardoise"],[data-theme="noel"]) .chip{background:transparent;border:1px solid var(--line-strong);font-weight:800;letter-spacing:.08em}
+:is([data-theme="ardoise"],[data-theme="noel"]) .topbar,:is([data-theme="ardoise"],[data-theme="noel"]) .tabbar{background:rgba(18,20,23,.88)}
+:is([data-theme="ardoise"],[data-theme="noel"]) .view-head h2{font-size:54px;font-weight:900;text-transform:uppercase;letter-spacing:-.07em;line-height:.88}
+:is([data-theme="ardoise"],[data-theme="noel"]) .eyebrow,:is([data-theme="ardoise"],[data-theme="noel"]) .view-head p{text-transform:uppercase;letter-spacing:.08em;font-weight:700;font-size:12px}
+:is([data-theme="ardoise"],[data-theme="noel"]) .moment{background:#f4f5f7;color:#121417;border-radius:14px}
+:is([data-theme="ardoise"],[data-theme="noel"]) .moment .moment-txt{text-transform:uppercase;font-weight:900;letter-spacing:-.02em}
+:is([data-theme="ardoise"],[data-theme="noel"]) .moment button{background:#121417;color:#f4f5f7;text-transform:uppercase;font-weight:900}
+:is([data-theme="ardoise"],[data-theme="noel"]) .moment.urgent{background:#ff6b6b;color:#121417}
+:is([data-theme="ardoise"],[data-theme="noel"]) .day-label{text-transform:uppercase;font-weight:900;letter-spacing:-.02em}
+:is([data-theme="ardoise"],[data-theme="noel"]) .story-ring{background:#f4f5f7}
+:is([data-theme="ardoise"],[data-theme="noel"]) .post{border:0;border-radius:20px;isolation:isolate}
+:is([data-theme="ardoise"],[data-theme="noel"]) .post::before{content:"";position:absolute;inset:-40px;z-index:-1;background:var(--glow,none) center/cover;filter:blur(40px) saturate(1.6);opacity:.45}
+:is([data-theme="ardoise"],[data-theme="noel"]) .post::after{content:"";position:absolute;inset:0;z-index:-1;background:linear-gradient(transparent 40%,rgba(18,20,23,.6))}
+:is([data-theme="ardoise"],[data-theme="noel"]) .post-who b{text-transform:uppercase;font-weight:900}
+:is([data-theme="ardoise"],[data-theme="noel"]) .badge-late{background:transparent;border:1px solid #fff;color:#fff;font-weight:900;letter-spacing:.08em}
+:is([data-theme="ardoise"],[data-theme="noel"]) .react{background:rgba(255,255,255,.1);font-weight:800}
+:is([data-theme="ardoise"],[data-theme="noel"]) .react.on{background:#f4f5f7;border-color:#f4f5f7}
+:is([data-theme="ardoise"],[data-theme="noel"]) .react.on b{color:#121417}
+:is([data-theme="ardoise"],[data-theme="noel"]) .comment-form input{background:rgba(255,255,255,.08)}
+:is([data-theme="ardoise"],[data-theme="noel"]) .btn-primary,:is([data-theme="ardoise"],[data-theme="noel"]) .comment-form button{background:#f4f5f7;color:#121417;font-weight:900;text-transform:uppercase;letter-spacing:.02em}
+:is([data-theme="ardoise"],[data-theme="noel"]) .tab{text-transform:uppercase;font-weight:800;letter-spacing:.06em;font-size:10px}
+:is([data-theme="ardoise"],[data-theme="noel"]) .tab[aria-pressed="true"]{color:#fff}
+:is([data-theme="ardoise"],[data-theme="noel"]) .shutter-ring{border:3px solid #fff}
+:is([data-theme="ardoise"],[data-theme="noel"]) .shutter-core{background:#fff}
+:is([data-theme="ardoise"],[data-theme="noel"]) .profile-card h2,:is([data-theme="ardoise"],[data-theme="noel"]) .panel h3{text-transform:uppercase;font-weight:900;letter-spacing:-.02em}
+:is([data-theme="ardoise"],[data-theme="noel"]) .stat b{font-weight:900}
+:is([data-theme="ardoise"],[data-theme="noel"]) .code-big,:is([data-theme="ardoise"],[data-theme="noel"]) .share-code{color:#fff;font-weight:900}
+:is([data-theme="ardoise"],[data-theme="noel"]) .mini-btn{background:var(--surface-2);color:#fff}
+:is([data-theme="ardoise"],[data-theme="noel"]) .toast{background:#f4f5f7;color:#121417}
 
 /* ───── Éditorial ───── */
 html[data-theme="edito"]{
@@ -149,20 +149,19 @@ html[data-theme="foret"]{
 [data-theme="edito"] .theme-opt.on{border-width:3px;background:#0e0e0e;color:#fafaf7}
 [data-theme="edito"] .theme-opt.on small{color:#cfcfc8}
 
-/* ── Noël ── */
-[data-theme="noel"]{--bg:#0f2a1f;--surface:#173828;--surface-2:#1e4532;--fg:#fbf6ee;--muted:#b9cbbd;--line:#24503a;--line-strong:#2f6248;--primary:#d42a3a;--primary-fg:#fff;--accent:#f2c14e;color-scheme:dark}
-[data-theme="noel"] body{background:radial-gradient(1200px 600px at 50% -10%,#1d4a35,transparent),#0f2a1f}
-[data-theme="noel"] .topbar,[data-theme="noel"] .tabbar{background:rgba(15,42,31,.9);border-color:#2f6248}
-[data-theme="noel"] .tabbar{border-top:2px solid #d42a3a}
-[data-theme="noel"] .logo-sm::after{content:" 🎄"}
-[data-theme="noel"] .view-head h2{color:#f2c14e}
-[data-theme="noel"] .post{border-color:#2f6248}
-[data-theme="noel"] .tab[aria-pressed="true"]{color:#f2c14e}
-[data-theme="noel"] .shutter-ring{border-color:#d42a3a}
-[data-theme="noel"] .shutter-core{background:#fbf6ee}
-[data-theme="noel"] .bubble.me{background:#d42a3a}
-[data-theme="noel"] #app::before{content:"";position:fixed;inset:0;pointer-events:none;z-index:25;opacity:.55;
-  background-image:radial-gradient(2px 2px at 20px 30px,#fff,transparent),radial-gradient(2px 2px at 120px 80px,#fff,transparent),radial-gradient(1.5px 1.5px at 200px 150px,#fff,transparent),radial-gradient(2.5px 2.5px at 60px 200px,#fff,transparent),radial-gradient(1.5px 1.5px at 260px 40px,#fff,transparent);
-  background-size:300px 260px;animation:neige 14s linear infinite}
+/* ── Noël : Ardoise noir et blanc + neige + guirlande ── */
+[data-theme="noel"] #app::before,[data-theme="noel"] #app::after{content:"";position:fixed;inset:0;pointer-events:none;z-index:25;
+  background-image:radial-gradient(2.5px 2.5px at 20px 30px,#fff,transparent),radial-gradient(2px 2px at 120px 90px,#fff,transparent),radial-gradient(3px 3px at 210px 160px,#fff,transparent),radial-gradient(2px 2px at 60px 210px,#fff,transparent),radial-gradient(2.5px 2.5px at 270px 40px,#fff,transparent),radial-gradient(1.5px 1.5px at 170px 240px,#fff,transparent);
+  background-size:300px 260px;opacity:.8;animation:neige 16s linear infinite}
+[data-theme="noel"] #app::after{background-size:220px 200px;opacity:.5;animation-duration:24s;filter:blur(.5px)}
 @keyframes neige{from{background-position:0 0}to{background-position:40px 260px}}
-@media (prefers-reduced-motion:reduce){[data-theme="noel"] #app::before{animation:none}}
+[data-theme="noel"] .topbar::after{content:"";position:absolute;left:0;right:0;bottom:-14px;height:18px;pointer-events:none;z-index:2;
+  background:
+   radial-gradient(circle at 12px 11px,#ff3b3b 4px,transparent 5px) 0 0/96px 18px,
+   radial-gradient(circle at 36px 13px,#ffd23f 4px,transparent 5px) 0 0/96px 18px,
+   radial-gradient(circle at 60px 11px,#2ecc71 4px,transparent 5px) 0 0/96px 18px,
+   radial-gradient(circle at 84px 13px,#3fa9ff 4px,transparent 5px) 0 0/96px 18px,
+   radial-gradient(ellipse 14px 8px at 12px 0,transparent 6px,#3a3f46 6px 7.5px,transparent 8px) 0 0/24px 18px;
+  animation:guirlande 1.6s steps(2) infinite}
+@keyframes guirlande{50%{filter:brightness(1.5) saturate(1.3)}}
+@media (prefers-reduced-motion:reduce){[data-theme="noel"] #app::before,[data-theme="noel"] #app::after,[data-theme="noel"] .topbar::after{animation:none}}

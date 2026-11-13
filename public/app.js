@@ -626,9 +626,9 @@ const THEMES = [
   { id: 'edito', name: 'Éditorial', desc: 'Magazine, point rouge', sw: ['#fafaf7', '#0e0e0e', '#d7263d'] },
   { id: 'foret', name: 'Forêt', desc: 'Vert sauge et sable', sw: ['#131a16', '#8fb38a', '#e6d8b8'] },
   { id: 'classique', name: 'Couleurs', desc: 'Violet et rose', sw: ['#5b4bff', '#ff4f8b', '#22c3b5'] },
-  { id: 'noel', name: 'Noël', desc: 'Sapin, rouge et neige', sw: ['#0f2a1f', '#d42a3a', '#f2c14e'] },
+  { id: 'noel', name: 'Noël', desc: 'Noir et blanc, neige, guirlande', sw: ['#121417', '#f4f5f7', '#ff3b3b'] },
 ];
-const THEME_BAR = { ardoise: '#121417', edito: '#fafaf7', foret: '#131a16', noel: '#0f2a1f' };
+const THEME_BAR = { ardoise: '#121417', edito: '#fafaf7', foret: '#131a16', noel: '#121417' };
 function currentTheme() { return localStorage.getItem('berail.theme') || 'ardoise'; }
 function applyTheme(id) {
   localStorage.setItem('berail.theme', id);
