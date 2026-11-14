@@ -1427,12 +1427,15 @@ if (window.visualViewport) {
     cap.filter = b.dataset.filter;
     applyFilterToReview();
   };
-  const exit = $('#decoyExit');
-  if (exit) {
-    let hold;
-    // sortie cachée réservée à l'administrateur (aperçu) ; les élèves restent sur la page tant que le mode est actif
-    exit.addEventListener('pointerdown', () => { hold = setTimeout(() => { if (window.BERAIL_IS_SUPER && window.BERAIL_IS_SUPER()) hideDecoy(); }, 1200); });
-    ['pointerup', 'pointerleave', 'pointercancel'].forEach((ev) => exit.addEventListener(ev, () => clearTimeout(hold)));
+  const ds = $('#decoySearch'), dq = $('#decoyQ'), dn = $('#decoyNo');
+  if (ds && dq) {
+    const norm = (v) => v.normalize('NFD').replace(/[\u0300-\u036f]/g, '').trim().toLowerCase();
+    const tryWord = async () => {
+      if (norm(dq.value) === 'terminus' && window.BERAIL_DECOY_SECRET && await window.BERAIL_DECOY_SECRET()) { dq.value = ''; dq.blur(); if (dn) dn.classList.add('hidden'); return true; }
+      return false;
+    };
+    dq.addEventListener('input', () => { if (dn) dn.classList.add('hidden'); tryWord(); });
+    ds.addEventListener('submit', async (e) => { e.preventDefault(); if (!await tryWord() && dq.value.trim() && dn) dn.classList.remove('hidden'); });
   }
 }
 $('#flipCam').addEventListener('click', async () => {

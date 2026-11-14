@@ -13,9 +13,9 @@
 <link rel="apple-touch-icon" sizes="180x180" href="/bm-icon-180.png">
 <link rel="icon" type="image/png" href="/bm-icon-180.png">
 <script>(function(){var t=localStorage.getItem('berail.theme')||'ardoise';if(t!=='classique')document.documentElement.setAttribute('data-theme',t);window.__theme=t;})();</script>
-<link rel="stylesheet" href="/styles.css?v=20261113i">
-<link rel="stylesheet" href="/classic.css?v=20261113i" id="classicCss">
-<link rel="stylesheet" href="/themes.css?v=20261113i">
+<link rel="stylesheet" href="/styles.css?v=20261114a">
+<link rel="stylesheet" href="/classic.css?v=20261114a" id="classicCss">
+<link rel="stylesheet" href="/themes.css?v=20261114a">
 <script>if(window.__theme!=='classique')document.getElementById('classicCss').disabled=true;</script>
 </head>
 <body>
@@ -180,7 +180,7 @@
     <p class="decoy-eyebrow">Manuel numérique</p>
     <h1>La lecture, partout.</h1>
     <p>Retrouvez les ouvrages au programme, les fiches de lecture et les ressources du CDI. Empruntez un livre en un geste, révisez hors ligne.</p>
-    <div class="decoy-search"><span>🔍 Rechercher un titre, un auteur, une cote…</span></div>
+    <form class="decoy-search" id="decoySearch" autocomplete="off"><span aria-hidden="true">🔍</span><input id="decoyQ" type="search" placeholder="Rechercher un titre, un auteur, une cote…" autocomplete="off" autocapitalize="off" spellcheck="false"></form><p class="decoy-noresult hidden" id="decoyNo">Aucun résultat pour cette recherche.</p>
     <div class="decoy-chips"><span>Tous</span><span>Lettres</span><span>Histoire</span><span>Maths</span><span>Sciences</span><span>Langues</span><span>Arts</span></div>
   </div>
   <main class="decoy-wip" id="decoyGrid"><div class="decoy-wip-card"><span>🚧</span><b>En cours de développement</b><p>La plateforme de manuels numériques arrive bientôt. Les ouvrages et les ressources seront ajoutés au fur et à mesure.</p></div></main>
@@ -219,10 +219,10 @@
   <div class="consent-inner stopped-inner"><p class="stopped-text">Cette page n’existe pas.</p></div>
 </div>
 
-<script src="/firebase-api.js?v=20261113i"></script>
-<script src="/recap.js?v=20261113i"></script>
-<script src="/app.js?v=20261113i"></script>
-<script src="/extras.js?v=20261113i"></script>
-<script src="/features.js?v=20261113i"></script>
+<script src="/firebase-api.js?v=20261114a"></script>
+<script src="/recap.js?v=20261114a"></script>
+<script src="/app.js?v=20261114a"></script>
+<script src="/extras.js?v=20261114a"></script>
+<script src="/features.js?v=20261114a"></script>
 </body>
 </html>
