@@ -587,3 +587,17 @@ input[type="time"]{font:inherit;color:var(--fg);background:var(--surface-2);bord
 .decoy-wip-card span{font-size:34px;display:block;margin-bottom:8px}
 .decoy-wip-card b{display:block;color:#1d1a14;font-size:18px;margin-bottom:6px;font-family:Georgia,"Times New Roman",serif}
 .decoy-wip-card p{margin:0;font-size:13px;line-height:1.5}
+
+/* ── 2026-11-16 : charte, défilement, photo de profil, messages ── */
+.consent-screen #consentAccept{position:static;box-shadow:none}
+html,body{overflow-x:hidden}
+#screen-app #views{overflow-x:hidden}
+body.in-chat .to-top{display:none !important}
+.av-zoom-wrap{display:flex;justify-content:center;padding-top:6px}
+.avatar.av-zoom{width:min(68vw,300px) !important;height:min(68vw,300px) !important;font-size:min(26vw,110px) !important;border-width:6px !important}
+.avatar.av-zoom.av-emoji{font-size:min(34vw,150px) !important}
+.media-top .avatar,.who-row .avatar{cursor:zoom-in}
+.chat-head .chat-bell{margin-left:auto;font-size:16px;flex:none}
+.chat-head .chat-bell.on{background:var(--primary);color:var(--primary-fg)}
+.sheet .consent-scroll{overflow-y:auto;-webkit-overflow-scrolling:touch;overscroll-behavior:contain;padding-right:4px}
+.sheet .charter-fine{margin-bottom:4px}

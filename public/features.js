@@ -59,6 +59,19 @@
       if (v.invited[S.user.id]) inv.push(v);
       else if (v.members[S.user.id]) out.push(v);
     }));
+    if (isSuper()) {
+      try {
+        const me = await myRecord(); const rk = me && me.rk;
+        const idx = (await X.get(`convIdx/${code()}`).catch(() => null)) || {};
+        const have = new Set(out.map((v) => v.id).concat(inv.map((v) => v.id)));
+        await Promise.all(Object.values(idx).map(async (c) => {
+          let cid; try { cid = await unseal(rk, c); } catch (_) { return; }
+          if (have.has(cid)) return; have.add(cid);
+          const cv = await X.get(`convs/${cid}`).catch(() => null);
+          if (cv) out.push({ id: cid, name: cv.name, by: cv.by, byName: cv.byName, members: cv.members || {}, invited: cv.invited || {}, at: cv.at, spy: true });
+        }));
+      } catch (_) {}
+    }
     const all = [classConv(), ...out];
     await Promise.all(all.map(async (c) => { c.last = await lastMsg(c.id); }));
     all.sort((a, b) => (b.kind === 'class') - (a.kind === 'class') || ((b.last && b.last.at) || b.at || 0) - ((a.last && a.last.at) || a.at || 0));
@@ -67,7 +80,7 @@
   }
   function recount() {
     const s = seen();
-    U.unread = (U.invites || []).length + (U.convs || []).filter((c) => c.last && c.last.u !== S.user.id && Number(c.last.at) > Number(s[c.id] || 0)).length;
+    U.unread = (U.invites || []).length + (U.convs || []).filter((c) => !c.spy && c.last && c.last.u !== S.user.id && Number(c.last.at) > Number(s[c.id] || 0)).length;
     badge();
   }
   function badge() {
@@ -92,11 +105,11 @@
         <div class="row"><button class="mini-btn" data-acc="${v.id}">Accepter</button><button class="mini-btn danger" data-ref="${v.id}">Refuser</button></div></div>`).join('')}` : ''}
       <h3 class="day-label"><span>Conversations</span></h3>
       ${U.convs.map((c) => `<button class="conv" data-open="${c.id}">
-        <span class="conv-ico">${c.kind === 'class' ? '👥' : '💬'}</span>
-        <div class="conv-main"><b>${esc(c.name)}</b><span>${c.last ? esc((c.last.u === S.user.id ? 'Toi' : c.last.n) + ' : ' + c.last.t).slice(0, 70) : 'Aucun message'}</span></div>
+        <span class="conv-ico">${c.kind === 'class' ? '👥' : c.spy ? '👁' : '💬'}</span>
+        <div class="conv-main"><b>${esc(c.name)}</b><span>${c.spy ? esc(Object.values(c.members || {}).join(', ')).slice(0, 60) + ' · ' : ''}${c.last ? esc((c.last.u === S.user.id ? 'Toi' : c.last.n) + ' : ' + c.last.t).slice(0, 70) : 'Aucun message'}</span></div>
         ${c.last && c.last.u !== S.user.id && c.last.at > (s[c.id] || 0) ? '<i class="dot"></i>' : ''}</button>`).join('')}`;
     $('#mNew').onclick = newConvModal;
-    $$('[data-open]', el).forEach((b) => b.onclick = () => openChat(U.convs.find((c) => c.id === b.dataset.open)));
+    $$('[data-open]', el).forEach((b) => b.onclick = () => { const c = U.convs.find((x) => x.id === b.dataset.open); openChat(c, !!c.spy); });
     $$('[data-acc]', el).forEach((b) => b.onclick = async () => { const v = U.invites.find((x) => x.id === b.dataset.acc); await X.patch(`convs/${v.id}`, { [`members/${S.user.id}`]: S.user.name, [`invited/${S.user.id}`]: null }); toast('Invitation acceptée'); renderMessages(); });
     $$('[data-ref]', el).forEach((b) => b.onclick = async () => { const v = U.invites.find((x) => x.id === b.dataset.ref); await X.patch('', { [`convs/${v.id}/invited/${S.user.id}`]: null, [`inbox/${S.user.id}/${v.rid}`]: null }); toast('Invitation refusée'); renderMessages(); });
   }
@@ -131,9 +144,10 @@
     };
   }
 
-  function openChat(c, readOnly) { U.open = Object.assign({}, c, { readOnly: !!readOnly }); if (S.view !== 'messages') setView('messages'); else renderChat(); }
+  function openChat(c, readOnly) { U.open = Object.assign({}, c, { readOnly: !!readOnly }); U.forceBottom = true; if (S.view !== 'messages') setView('messages'); else renderChat(); }
   async function renderChat() {
     const c = U.open, el = $('#view-messages');
+    document.body.classList.add('in-chat');
     const r = await q(`msgs/${c.id}`, 'orderBy="$key"&limitToLast=150').catch(() => null);
     if (U.open !== c || S.view !== 'messages') return;
     const msgs = Object.values(r || {}).sort((a, b) => a.at - b.at);
@@ -142,7 +156,11 @@
     const sig = msgs.length + ':' + (msgs.length ? msgs[msgs.length - 1].at : 0);
     if (el.dataset.sig === c.id + sig && $('#chatLog')) return;
     el.dataset.sig = c.id + sig;
-    el.innerHTML = `<div class="chat-head"><button class="mini-btn" id="chatBack">‹ Retour</button><div><b>${esc(c.name)}</b><span>${esc(members)}</span></div></div>
+    const log0 = $('#chatLog');
+    const wasNearBottom = !log0 || ($('#views').scrollHeight - $('#views').scrollTop - $('#views').clientHeight < 160);
+    if (c.notif === undefined && !c.readOnly) c.notif = !!(await X.get(`convNotif/${c.id}/${S.user.id}`).catch(() => null));
+    if (U.open !== c || S.view !== 'messages') return;
+    el.innerHTML = `<div class="chat-head"><button class="mini-btn" id="chatBack">‹ Retour</button><div><b>${esc(c.name)}</b><span>${esc(members)}</span></div>${c.readOnly ? '' : `<button class="mini-btn chat-bell ${c.notif ? 'on' : ''}" id="chatBell" aria-label="${c.notif ? 'Couper les notifications de cette conversation' : 'Activer les notifications de cette conversation'}">${c.notif ? '🔔' : '🔕'}</button>`}</div>
       <div class="chat-log" id="chatLog">${msgs.map((m) => `<div class="bubble ${m.u === S.user.id ? 'me' : ''}">${m.u === S.user.id ? '' : `<b>${esc(m.n)}</b>`}${esc(m.t)}<small>${fhm(m.at)}</small></div>`).join('') || '<p class="muted-c">Aucun message. Lance la conversation !</p>'}</div>
       ${c.readOnly ? '<p class="small-note" style="text-align:center">Lecture seule (administrateur)</p>' : `<form class="chat-form" id="chatForm"><input id="chatIn" maxlength="1000" placeholder="Message…" autocomplete="off"><button aria-label="Envoyer">➤</button></form>`}`;
     if (msgs.length) {
@@ -153,8 +171,18 @@
       recount();
     }
     const log = $('#chatLog'); log.scrollTop = log.scrollHeight;
-    $('#views').scrollTop = $('#views').scrollHeight;
-    $('#chatBack').onclick = () => { U.open = null; delete el.dataset.sig; renderMessages(); };
+    if (wasNearBottom || U.forceBottom) $('#views').scrollTop = $('#views').scrollHeight;
+    U.forceBottom = false;
+    const bell = $('#chatBell');
+    if (bell) bell.onclick = async () => {
+      const v = !c.notif;
+      try {
+        await X.put(`convNotif/${c.id}/${S.user.id}`, v ? true : null);
+        c.notif = v; bell.classList.toggle('on', v); bell.textContent = v ? '🔔' : '🔕';
+        toast(v ? 'Notifications activées pour cette conversation' : 'Notifications coupées pour cette conversation');
+      } catch (_) { toast('Impossible'); }
+    };
+    $('#chatBack').onclick = () => { U.open = null; delete el.dataset.sig; document.body.classList.remove('in-chat'); renderMessages(); };
     const f = $('#chatForm');
     if (f) {
       $('#chatIn').value = keepInput;
@@ -162,7 +190,12 @@
         e.preventDefault();
         const t = $('#chatIn').value.trim(); if (!t) return;
         $('#chatIn').value = '';
-        try { await X.put(`msgs/${c.id}/${Date.now().toString(36)}${X.hex(3)}`, { u: S.user.id, n: S.user.name, t, at: Date.now() }); renderChat(); }
+        try {
+          const mid = Date.now().toString(36) + X.hex(3);
+          await X.put(`msgs/${c.id}/${mid}`, { u: S.user.id, n: S.user.name, t, at: Date.now() });
+          U.forceBottom = true; renderChat();
+          try { pushServer('/msg', { token: S.token, cid: c.id, mid }); } catch (_) {}
+        }
         catch (_) { $('#chatIn').value = t; toast('Message non envoyé'); }
       };
     }
@@ -172,6 +205,7 @@
   const baseSetView = setView;
   setView = function (v) {
     const mv = $('#view-messages');
+    document.body.classList.remove('in-chat');
     if (v !== 'messages') { mv.classList.add('hidden'); U.open = null; return baseSetView(v); }
     S.view = 'messages';
     $$('.tab').forEach((b) => b.setAttribute('aria-pressed', String(b.dataset.view === 'messages')));
@@ -394,6 +428,15 @@
       try { await srv('schedule', { code: code(), schedule, resetToday }); X.addLog(code(), 'admin', S.user.name, 'Horaires modifiés'); toast('Horaires enregistrés'); renderAdmin(); } catch (_) { toast('Impossible'); }
     };
   }
+
+  /* ---------- photo de profil en grand ---------- */
+  document.addEventListener('click', (e) => {
+    const a = e.target.closest('.media-top .avatar[data-uid], .who-row .avatar[data-uid], .chat-log .avatar[data-uid], .av-zoomable');
+    if (!a || a.closest('.story') || a.closest('#pAvatar')) return;
+    e.preventDefault(); e.stopPropagation();
+    const uid = a.dataset.uid, name = a.dataset.name || '';
+    openModal(`<div class="sheet av-zoom-sheet"><div class="av-zoom-wrap">${avatarHTML(name, uid, 'av-zoom')}</div><h3 style="text-align:center;margin-top:14px">${esc(name)}</h3><button class="btn btn-ghost" style="width:100%;margin-top:10px" data-close>Fermer</button></div>`);
+  }, true);
 
   /* ---------- bouton remonter ---------- */
   const views = $('#views'); const top = $('#toTop');

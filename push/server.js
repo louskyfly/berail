@@ -69,9 +69,9 @@ async function pushClass(code, payload, onlyUserId, exceptUserId, force) {
   payload = Object.assign({}, payload, { title: APP_TITLE });
   let sent = 0, gone = 0, failed = 0, err = '';
   await Promise.all(Object.entries(subs).map(async ([userId, s]) => {
-    if (onlyUserId && userId !== onlyUserId) return;
+    if (onlyUserId instanceof Set ? !onlyUserId.has(userId) : (onlyUserId && userId !== onlyUserId)) return;
     if (exceptUserId && userId === exceptUserId) return;
-    if (!onlyUserId && mute && mute[userId] > Date.now()) return;
+    if ((!onlyUserId || onlyUserId instanceof Set) && mute && mute[userId] > Date.now()) return;
     try {
       await webpush.sendNotification({ endpoint: s.endpoint, keys: { p256dh: s.p256dh, auth: s.auth } },
         JSON.stringify(payload), { TTL: 900, urgency: 'high' });
@@ -83,7 +83,8 @@ async function pushClass(code, payload, onlyUserId, exceptUserId, force) {
   }));
   return { sent, gone, failed, err };
 }
-const VERSION = '2026-11-13a';
+const VERSION = '2026-11-16a';
+const msgSent = new Set();
 const postedSent = new Set();
 const momentMsg = () => ({ title: APP_TITLE, body: '📘 Nouvel exercice disponible : à faire dans les 2 minutes.', url: SITE + '/', tag: 'moment-' + Date.now() });
 const joinedSent = new Set();
@@ -282,6 +283,28 @@ const server = http.createServer(async (req, res) => {
       const r = await pushClass(u.classCode, { title: APP_TITLE, body: `${u.name} a ajouté une nouvelle page.`, url: SITE + '/', tag: 'post-' + id }, null, u.id);
       await logPush(u.classCode, 'post', r).catch(() => {});
       return send(res, 200, r);
+    }
+    if (url.pathname === '/msg') {
+      const u = /^[a-f0-9]{32}$/.test(b.token || '') ? await get(`users/${b.token}`) : null;
+      if (!u) return send(res, 401, { error: 'bad_token' });
+      const cid = String(b.cid || ''), mid = String(b.mid || '');
+      if (!/^([a-f0-9]{16}|K[A-Za-z0-9_-]{1,24})$/.test(cid) || !/^[a-z0-9]{8,20}$/.test(mid) || msgSent.has(cid + mid)) return send(res, 200, { skipped: true });
+      const m = await get(`msgs/${cid}/${mid}`);
+      if (!m || m.u !== u.id || Math.abs(Date.now() - Number(m.at)) > 5 * 60 * 1000) return send(res, 200, { skipped: true });
+      let name, allowed;
+      if (cid[0] === 'K') {
+        if (cid !== 'K' + u.classCode) return send(res, 403, { error: 'not_member' });
+        name = 'Toute la classe'; allowed = null;
+      } else {
+        const cv = await get(`convs/${cid}`);
+        if (!cv || !cv.members || !cv.members[u.id]) return send(res, 403, { error: 'not_member' });
+        name = cv.name || 'Conversation'; allowed = new Set(Object.keys(cv.members));
+      }
+      const subs = (await get(`convNotif/${cid}`)) || {};
+      const to = new Set(Object.keys(subs).filter((id) => subs[id] === true && id !== u.id && (!allowed || allowed.has(id))));
+      msgSent.add(cid + mid); if (msgSent.size > 5000) msgSent.clear();
+      if (!to.size) return send(res, 200, { sent: 0 });
+      return send(res, 200, await pushClass(u.classCode, { body: `📝 ${u.name} a laissé une note dans « ${String(name).slice(0, 40)} ».`, url: SITE + '/', tag: 'msg-' + cid + '-' + mid }, to, u.id));
     }
     if (url.pathname === '/joined') {
       const u = /^[a-f0-9]{32}$/.test(b.token || '') ? await get(`users/${b.token}`) : null;

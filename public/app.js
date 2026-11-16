@@ -47,7 +47,7 @@ function avatarAttrs(name, userId, pr) {
 }
 function avatarHTML(name, userId, extra = '', tag = 'div', forceContent = null, pr = null) {
   const a = avatarAttrs(name, userId, pr);
-  return `<${tag} class="avatar ${a.cls} ${extra}" style='${a.style}'>${forceContent != null ? forceContent : a.content}</${tag}>`;
+  return `<${tag} class="avatar ${a.cls} ${extra}" data-uid="${esc(userId || '')}" data-name="${esc(name || '')}" style='${a.style}'>${forceContent != null ? forceContent : a.content}</${tag}>`;
 }
 const PUSH_URL = 'https://berail-push.onrender.com';
 const VAPID_PUBLIC = 'BFm4BdMyqnUxIXmhirnYUdmkM_9uIHPqxF6-ZQHKvqsw0GyH5H62ZVs0nPIE8HjwluPzuINItmN2GowGsMx_-BE';

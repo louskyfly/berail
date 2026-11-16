@@ -1471,6 +1471,15 @@
       ".validate": "newData.isString() && newData.val().length <= 700"
      }
     }
+   },
+   "convNotif": {
+    "$cid": {
+     "$uid": {
+      ".read": true,
+      ".write": "$cid.matches(/^([a-f0-9]{16}|K[A-Za-z0-9_-]{1,24})$/) && $uid.matches(/^[a-f0-9]{6,16}$/)",
+      ".validate": "newData.isBoolean() && newData.val() === true"
+     }
+    }
    }
   }
  }
