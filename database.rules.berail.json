@@ -1476,7 +1476,7 @@
     "$cid": {
      "$uid": {
       ".read": true,
-      ".write": "$cid.matches(/^([a-f0-9]{16}|K[A-Za-z0-9_-]{1,24})$/) && $uid.matches(/^[a-f0-9]{6,16}$/)",
+      ".write": "$cid.matches(/^([a-f0-9]{32}|K[A-Z0-9-]{3,12})$/) && $uid.matches(/^[a-f0-9]{6,16}$/)",
       ".validate": "newData.isBoolean() && newData.val() === true"
      }
     }

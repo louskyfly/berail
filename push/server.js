@@ -83,7 +83,7 @@ async function pushClass(code, payload, onlyUserId, exceptUserId, force) {
   }));
   return { sent, gone, failed, err };
 }
-const VERSION = '2026-11-16a';
+const VERSION = '2026-11-16b';
 const msgSent = new Set();
 const postedSent = new Set();
 const momentMsg = () => ({ title: APP_TITLE, body: '📘 Nouvel exercice disponible : à faire dans les 2 minutes.', url: SITE + '/', tag: 'moment-' + Date.now() });
@@ -288,7 +288,7 @@ const server = http.createServer(async (req, res) => {
       const u = /^[a-f0-9]{32}$/.test(b.token || '') ? await get(`users/${b.token}`) : null;
       if (!u) return send(res, 401, { error: 'bad_token' });
       const cid = String(b.cid || ''), mid = String(b.mid || '');
-      if (!/^([a-f0-9]{16}|K[A-Za-z0-9_-]{1,24})$/.test(cid) || !/^[a-z0-9]{8,20}$/.test(mid) || msgSent.has(cid + mid)) return send(res, 200, { skipped: true });
+      if (!/^([a-f0-9]{32}|K[A-Z0-9-]{3,12})$/.test(cid) || !/^[a-z0-9]{8,20}$/.test(mid) || msgSent.has(cid + mid)) return send(res, 200, { skipped: true });
       const m = await get(`msgs/${cid}/${mid}`);
       if (!m || m.u !== u.id || Math.abs(Date.now() - Number(m.at)) > 5 * 60 * 1000) return send(res, 200, { skipped: true });
       let name, allowed;
