@@ -277,7 +277,7 @@
     if (method === 'POST' && route === '/api/moment') {
       const u = await userFromToken(body.token); const k = await klassOf(u.classCode);
       if (k.owner !== u.id) fail(403, 'owner_only');
-      const moment = { at: Date.now(), by: u.name }; const d = String(body.defi || '').trim().slice(0, 80); if (d) moment.d = d; await put(`classes/${u.classCode}/moment`, moment); return { moment };
+      const moment = { at: Date.now(), by: u.name }; const d = String(body.defi || '').trim().slice(0, 80); if (d) moment.d = d; const mn = Math.round(Number(body.minutes) || 0); if (mn >= 1 && mn <= 120 && mn !== 2) moment.m = mn; await put(`classes/${u.classCode}/moment`, moment); return { moment };
     }
     if (method === 'POST' && route === '/api/profile') {
       const u = await userFromToken(body.token); const p = body.profile || {};
@@ -302,7 +302,7 @@
       if (!/^data:image\/(jpeg|png|webp);base64,/.test(photo)) fail(400, 'bad_photo'); if (photo.length > 1400000) fail(413, 'too_large');
       const k = await klassOf(u.classCode);
       if (k.owner !== u.id) { const c = await get(`ctl/${u.classCode}`).catch(() => null); if (c && c.postsOff) fail(423, 'posts_off'); }
-      const p = { id: uid(8), shareCode: shortCode(), userId: u.id, userName: u.name, classCode: u.classCode, caption: String(body.caption || '').slice(0, 140), late: !!(k.moment && Date.now() - k.moment.at > LATE_MS), createdAt: nowIso() };
+      const p = { id: uid(8), shareCode: shortCode(), userId: u.id, userName: u.name, classCode: u.classCode, caption: String(body.caption || '').slice(0, 140), late: !!(k.moment && Date.now() - k.moment.at > (Number(k.moment.m) || 2) * 60 * 1000), createdAt: nowIso() };
       if (k.moment && k.moment.d && Date.now() >= k.moment.at && dayKey(new Date(k.moment.at)) === dayKey()) p.d = String(k.moment.d).slice(0, 80);
       const flip = String(body.photoFlip || ''); if (/^data:image\/(jpeg|png|webp);base64,/.test(flip) && flip.length <= 1400000) p.flip = true;
       await put(`photos/${p.id}`, photo); if (p.flip) await put(`photos/${p.id}f`, flip);

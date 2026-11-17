@@ -82,7 +82,7 @@ function render() {
 
 function classCard(c) {
   const s = c.schedule || { enabled: false, mode: 'random', time: '12:00', from: '10:00', to: '16:00', days: '12345' };
-  const momentOn = c.moment && Date.now() - c.moment.at < 2 * 60 * 1000;
+  const momentOn = c.moment && Date.now() - c.moment.at < (Number(c.moment.m) || 2) * 60 * 1000;
   const today = !s.enabled ? '<p class="today">Horaires automatiques désactivés</p>'
     : c.today ? `<p class="today ${c.today.done ? 'ok' : 'wait'}">${c.today.done ? '✓ BeRail du jour lancé' : `Aujourd'hui : BeRail prévu à ${c.today.at}`}</p>`
     : '<p class="today">Pas de BeRail prévu aujourd\'hui</p>';

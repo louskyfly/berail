@@ -298,7 +298,7 @@ function renderBanner() {
   const el = $('#momentBanner');
   if (!S.moment || S.myPostId) { el.classList.add('hidden'); return; }
   el.classList.remove('hidden');
-  const left = S.moment.at + 2 * 60 * 1000 - Date.now();
+  const left = S.moment.at + (Number(S.moment.m) || 2) * 60 * 1000 - Date.now();
   el.classList.toggle('urgent', left <= 0);
   el.innerHTML = `<div class="moment-txt">${left > 0 ? '⚡ C\'est l\'heure du BeRail !' : '⏰ Tu as raté le moment…'}${S.moment.d ? `<span class="defi-line">🎯 Défi : ${esc(S.moment.d)}</span>` : ''}
       <small>${left > 0 ? `Encore ${mmss(left)} pour être à l'heure` : 'Tu peux encore publier, mais tu seras en retard'}</small></div>
@@ -1177,7 +1177,7 @@ function finishCapture() {
   cap.hasFlip = !!(cap.front && cap.back && cap.front !== cap.back);
   $('#reviewImg').src = cap.photo;
   resetStickers();
-  $('#reviewLate').classList.toggle('hidden', !(S.moment && Date.now() - S.moment.at > 2 * 60 * 1000));
+  $('#reviewLate').classList.toggle('hidden', !(S.moment && Date.now() - S.moment.at > (Number(S.moment.m) || 2) * 60 * 1000));
   $('#review').classList.remove('hidden');
   document.querySelectorAll('#filterStrip .filter-thumb').forEach((b) => b.classList.toggle('on', b.dataset.filter === cap.filter));
   showScreen('screen-capture');

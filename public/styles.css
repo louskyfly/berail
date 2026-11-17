@@ -609,3 +609,4 @@ body.in-chat .to-top{display:none !important}
 .defi-chips .mini-btn.on{outline:2px solid currentColor;font-weight:700}
 .defi-line{display:block;font-weight:700;margin-top:2px}
 .defi-chip{display:inline-block;margin-top:4px;padding:2px 8px;border-radius:999px;background:rgba(0,0,0,.45);color:#fff;font-size:.75em;font-weight:600;max-width:100%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.defi-min{width:84px;padding:6px 10px}

@@ -83,10 +83,10 @@ async function pushClass(code, payload, onlyUserId, exceptUserId, force) {
   }));
   return { sent, gone, failed, err };
 }
-const VERSION = '2026-11-17a';
+const VERSION = '2026-11-17b';
 const msgSent = new Set();
 const postedSent = new Set();
-const momentMsg = (d) => ({ title: APP_TITLE, body: d ? `📘 Nouvel exercice : ${d} (2 minutes)` : '📘 Nouvel exercice disponible : à faire dans les 2 minutes.', url: SITE + '/', tag: 'moment-' + Date.now() });
+const momentMsg = (d, m = 2) => ({ title: APP_TITLE, body: d ? `📘 Nouvel exercice : ${d} (${m} minute${m > 1 ? 's' : ''})` : `📘 Nouvel exercice disponible : à faire dans les ${m} minute${m > 1 ? 's' : ''}.`, url: SITE + '/', tag: 'moment-' + Date.now() });
 const joinedSent = new Set();
 async function addLog(code, k, w, t) {
   const id = Date.now().toString(36) + crypto.randomBytes(3).toString('hex');
@@ -268,8 +268,10 @@ const server = http.createServer(async (req, res) => {
       const k = await get(`classes/${u.classCode}`);
       if (!k || k.owner !== u.id) return send(res, 403, { error: 'owner_only' });
       const d = String(b.defi || '').trim().slice(0, 80);
-      const r = await pushClass(u.classCode, momentMsg(d));
-      await put(`classes/${u.classCode}/moment`, d ? { at: Date.now(), by: u.name, d } : { at: Date.now(), by: u.name });
+      const mn0 = Math.round(Number(b.minutes) || 0); const mn = mn0 >= 1 && mn0 <= 120 ? mn0 : 2;
+      const r = await pushClass(u.classCode, momentMsg(d, mn));
+      const mo = { at: Date.now(), by: u.name }; if (d) mo.d = d; if (mn !== 2) mo.m = mn;
+      await put(`classes/${u.classCode}/moment`, mo);
       await logPush(u.classCode, 'moment', r);
       return send(res, 200, r);
     }

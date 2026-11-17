@@ -974,6 +974,9 @@
       "d": {
        ".validate": "newData.isString() && newData.val().length <= 80"
       },
+      "m": {
+       ".validate": "newData.isNumber() && newData.val() >= 1 && newData.val() <= 120"
+      },
       "$other": {
        ".validate": false
       }

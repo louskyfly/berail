@@ -319,7 +319,7 @@
   const LOGI = { join: '👤', post: '📸', delete: '🗑', admin: '🛠', announce: '📣', conv: '💬' };
   const DAYS = [['1', 'L'], ['2', 'M'], ['3', 'M'], ['4', 'J'], ['5', 'V'], ['6', 'S'], ['7', 'D']];
   const DEFIS = ['🍽️ Ton repas', '✏️ Ta table', '🪟 La vue de ta fenêtre', '👟 Tes chaussures', '🎒 Ton sac', '☁️ Le ciel', '🤪 Ta pire grimace', '🔴 Un truc rouge', '🥤 Ce que tu bois', '👯 Toi et un pote'];
-  let defiSel = '';
+  let defiSel = ''; let defiMin = 2;
   let admTab = 'ctrl';
 
   async function renderAdmin() {
@@ -345,6 +345,8 @@
         <div class="defi-box"><b>🎯 Défi photo</b><span>Choisis un défi (ou écris le tien), puis lance le BeRail.</span>
           <div class="defi-chips">${DEFIS.map((d, i) => `<button class="mini-btn ${defiSel === d ? 'on' : ''}" data-defi="${i}">${d}</button>`).join('')}</div>
           <input class="inp-c" id="aDefi" maxlength="80" placeholder="Ou écris ton défi (ex. ta trousse)" value="${esc(DEFIS.includes(defiSel) ? '' : defiSel)}">
+          <b style="margin-top:6px">⏱️ Temps pour poster</b>
+          <div class="defi-chips">${[1, 2, 5, 10].map((m) => `<button class="mini-btn ${defiMin === m ? 'on' : ''}" data-dmin="${m}">${m} min</button>`).join('')}<input class="inp-c defi-min" id="aDMin" type="number" inputmode="numeric" min="1" max="120" placeholder="Autre" value="${[1, 2, 5, 10].includes(defiMin) ? '' : defiMin}"></div>
         </div>
         <div class="row" style="margin-top:12px"><button class="btn btn-primary" id="aFire">⚡ Lancer ${defiSel ? 'le défi' : 'un BeRail'}</button></div>
         <div class="row" style="margin-top:10px"><button class="btn btn-ghost" id="aAcc">Comptes & codes</button><button class="btn btn-ghost" id="aPurge">Vider les photos</button></div>`;
@@ -359,11 +361,13 @@
       });
       const op = $('#aOpen'); if (op) op.onclick = async () => { try { await API('/api/admin/unstop', { method: 'POST', body: JSON.stringify({ token: S.token }) }); toast('Site rouvert'); } catch (_) { toast('Impossible'); } renderAdmin(); };
       $$('[data-defi]', body).forEach((b) => b.onclick = () => { const d = DEFIS[Number(b.dataset.defi)]; defiSel = defiSel === d ? '' : d; renderAdmin(); });
+      $$('[data-dmin]', body).forEach((b) => b.onclick = () => { defiMin = Number(b.dataset.dmin); renderAdmin(); });
+      $('#aDMin').oninput = (e) => { const v = Math.round(Number(e.target.value)); if (v >= 1 && v <= 120) { defiMin = v; $$('[data-dmin]', body).forEach((b) => b.classList.toggle('on', Number(b.dataset.dmin) === v)); } };
       $('#aDefi').oninput = (e) => { defiSel = e.target.value.trim(); $$('[data-defi]', body).forEach((b) => b.classList.remove('on')); $('#aFire').textContent = defiSel ? '⚡ Lancer le défi' : '⚡ Lancer un BeRail'; };
       $('#aFire').onclick = async () => {
-        const defi = defiSel.slice(0, 80);
-        if (!confirm(defi ? `Lancer le défi « ${defi} » maintenant ? Toute la classe reçoit une notification.` : 'Lancer un BeRail maintenant ? Toute la classe reçoit une notification.')) return;
-        try { await API('/api/moment', { method: 'POST', body: JSON.stringify({ token: S.token, defi }) }); const r = await pushServer('/moment', { token: S.token, defi }); X.addLog(code(), 'admin', S.user.name, defi ? `Défi lancé : ${defi}` : 'BeRail lancé'); defiSel = ''; await refresh(true); toast(`⚡ Lancé${r && r.sent != null ? ` · ${r.sent} notif${r.sent > 1 ? 's' : ''}` : ''}`); } catch (_) { toast('Impossible'); }
+        const defi = defiSel.slice(0, 80); const minutes = Math.min(120, Math.max(1, Math.round(defiMin) || 2));
+        if (!confirm(`${defi ? `Lancer le défi « ${defi} »` : 'Lancer un BeRail'} maintenant, avec ${minutes} min pour poster ? Toute la classe reçoit une notification.`)) return;
+        try { await API('/api/moment', { method: 'POST', body: JSON.stringify({ token: S.token, defi, minutes }) }); const r = await pushServer('/moment', { token: S.token, defi, minutes }); X.addLog(code(), 'admin', S.user.name, `${defi ? `Défi lancé : ${defi}` : 'BeRail lancé'} (${minutes} min)`); defiSel = ''; defiMin = 2; await refresh(true); toast(`⚡ Lancé${r && r.sent != null ? ` · ${r.sent} notif${r.sent > 1 ? 's' : ''}` : ''}`); } catch (_) { toast('Impossible'); }
       };
       $('#aAcc').onclick = accountsModal; $('#aPurge').onclick = purgeModal;
     }
