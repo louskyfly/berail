@@ -300,7 +300,7 @@ function renderBanner() {
   el.classList.remove('hidden');
   const left = S.moment.at + 2 * 60 * 1000 - Date.now();
   el.classList.toggle('urgent', left <= 0);
-  el.innerHTML = `<div class="moment-txt">${left > 0 ? '⚡ C\'est l\'heure du BeRail !' : '⏰ Tu as raté le moment…'}
+  el.innerHTML = `<div class="moment-txt">${left > 0 ? '⚡ C\'est l\'heure du BeRail !' : '⏰ Tu as raté le moment…'}${S.moment.d ? `<span class="defi-line">🎯 Défi : ${esc(S.moment.d)}</span>` : ''}
       <small>${left > 0 ? `Encore ${mmss(left)} pour être à l'heure` : 'Tu peux encore publier, mais tu seras en retard'}</small></div>
     <button id="bannerGo">${left > 0 ? 'Prendre' : 'Publier'}</button>`;
   $('#bannerGo').onclick = openCapture;
@@ -346,7 +346,7 @@ function postCard(p) {
         ${avatarHTML(p.userName, p.userId)}
         <div class="post-who">
           <b>${esc(p.userName)}${p.mine ? ' <i>· toi</i>' : ''}${streakChip(p.userId)}</b>
-          <span>${hhmm(p.createdAt)} · ${left <= 1 ? "s'efface ce soir" : `encore ${left} j`}${p.late ? '<span class="badge-late">En retard</span>' : ''}</span>
+          <span>${hhmm(p.createdAt)} · ${left <= 1 ? "s'efface ce soir" : `encore ${left} j`}${p.late ? '<span class="badge-late">En retard</span>' : ''}</span>${p.defi ? `<span class="defi-chip">🎯 ${esc(p.defi)}</span>` : ''}
         </div>
       </div>
       <div class="media-actions" ${locked ? 'hidden' : ''}>

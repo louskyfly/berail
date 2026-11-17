@@ -318,6 +318,8 @@
   async function ownerWrite(upd) { await X.patch('', Object.assign(upd, X.proof(S.user, S.token))); }
   const LOGI = { join: '👤', post: '📸', delete: '🗑', admin: '🛠', announce: '📣', conv: '💬' };
   const DAYS = [['1', 'L'], ['2', 'M'], ['3', 'M'], ['4', 'J'], ['5', 'V'], ['6', 'S'], ['7', 'D']];
+  const DEFIS = ['🍽️ Ton repas', '✏️ Ta table', '🪟 La vue de ta fenêtre', '👟 Tes chaussures', '🎒 Ton sac', '☁️ Le ciel', '🤪 Ta pire grimace', '🔴 Un truc rouge', '🥤 Ce que tu bois', '👯 Toi et un pote'];
+  let defiSel = '';
   let admTab = 'ctrl';
 
   async function renderAdmin() {
@@ -340,7 +342,11 @@
         <div class="adm-line"><div><b>Site</b><span>${closed ? (site.until ? `Fermé jusqu’à ${fhm(site.until)}` : 'Fermé') : 'Ouvert'}</span></div>
           ${closed ? '<button class="mini-btn" id="aOpen">Rouvrir</button>' : `<div class="chips-row">${[[55, '1 cours'], [120, '2 h'], [0, 'Sans limite']].map(([m, l]) => `<button class="mini-btn danger" data-close-site="${m}">${l}</button>`).join('')}</div>`}</div>
         <p class="small-note">Site fermé : tout le monde voit « Cette page n’existe pas », sauf toi.</p>
-        <div class="row" style="margin-top:12px"><button class="btn btn-primary" id="aFire">⚡ Lancer un BeRail</button></div>
+        <div class="defi-box"><b>🎯 Défi photo</b><span>Choisis un défi (ou écris le tien), puis lance le BeRail.</span>
+          <div class="defi-chips">${DEFIS.map((d, i) => `<button class="mini-btn ${defiSel === d ? 'on' : ''}" data-defi="${i}">${d}</button>`).join('')}</div>
+          <input class="inp-c" id="aDefi" maxlength="80" placeholder="Ou écris ton défi (ex. ta trousse)" value="${esc(DEFIS.includes(defiSel) ? '' : defiSel)}">
+        </div>
+        <div class="row" style="margin-top:12px"><button class="btn btn-primary" id="aFire">⚡ Lancer ${defiSel ? 'le défi' : 'un BeRail'}</button></div>
         <div class="row" style="margin-top:10px"><button class="btn btn-ghost" id="aAcc">Comptes & codes</button><button class="btn btn-ghost" id="aPurge">Vider les photos</button></div>`;
       $('#aNotif').onclick = async () => { const v = !U.ctl.notifsOff; try { await ownerWrite({ [`ctl/${code()}/notifsOff`]: v, [`ctl/${code()}/by`]: S.user.id }); X.addLog(code(), 'admin', S.user.name, v ? 'Notifications coupées' : 'Notifications rallumées'); toast(v ? 'Notifications coupées' : 'Notifications rallumées'); } catch (_) { toast('Impossible'); } renderAdmin(); };
       $('#aDecoy').onclick = async () => { const v = !U.ctl.decoy; try { await ownerWrite({ [`ctl/${code()}/decoy`]: v, [`ctl/${code()}/by`]: S.user.id }); X.addLog(code(), 'admin', S.user.name, v ? 'Mode Biblio activé' : 'Mode Biblio coupé'); toast(v ? 'Mode Biblio activé · « terminus » pour revenir' : 'Mode Biblio coupé'); U.ctl.decoy = v; if (v) { decoyPreview = false; showDecoy(); } } catch (_) { toast('Impossible'); } renderAdmin(); };
@@ -352,9 +358,12 @@
         try { await API('/api/admin/stop', { method: 'POST', body: JSON.stringify({ token: S.token, minutes: m }) }); toast('Site fermé'); } catch (_) { toast('Impossible'); } renderAdmin();
       });
       const op = $('#aOpen'); if (op) op.onclick = async () => { try { await API('/api/admin/unstop', { method: 'POST', body: JSON.stringify({ token: S.token }) }); toast('Site rouvert'); } catch (_) { toast('Impossible'); } renderAdmin(); };
+      $$('[data-defi]', body).forEach((b) => b.onclick = () => { const d = DEFIS[Number(b.dataset.defi)]; defiSel = defiSel === d ? '' : d; renderAdmin(); });
+      $('#aDefi').oninput = (e) => { defiSel = e.target.value.trim(); $$('[data-defi]', body).forEach((b) => b.classList.remove('on')); $('#aFire').textContent = defiSel ? '⚡ Lancer le défi' : '⚡ Lancer un BeRail'; };
       $('#aFire').onclick = async () => {
-        if (!confirm('Lancer un BeRail maintenant ? Toute la classe reçoit une notification.')) return;
-        try { await API('/api/moment', { method: 'POST', body: JSON.stringify({ token: S.token }) }); const r = await pushServer('/moment', { token: S.token }); X.addLog(code(), 'admin', S.user.name, 'BeRail lancé'); await refresh(true); toast(`⚡ Lancé${r && r.sent != null ? ` · ${r.sent} notif${r.sent > 1 ? 's' : ''}` : ''}`); } catch (_) { toast('Impossible'); }
+        const defi = defiSel.slice(0, 80);
+        if (!confirm(defi ? `Lancer le défi « ${defi} » maintenant ? Toute la classe reçoit une notification.` : 'Lancer un BeRail maintenant ? Toute la classe reçoit une notification.')) return;
+        try { await API('/api/moment', { method: 'POST', body: JSON.stringify({ token: S.token, defi }) }); const r = await pushServer('/moment', { token: S.token, defi }); X.addLog(code(), 'admin', S.user.name, defi ? `Défi lancé : ${defi}` : 'BeRail lancé'); defiSel = ''; await refresh(true); toast(`⚡ Lancé${r && r.sent != null ? ` · ${r.sent} notif${r.sent > 1 ? 's' : ''}` : ''}`); } catch (_) { toast('Impossible'); }
       };
       $('#aAcc').onclick = accountsModal; $('#aPurge').onclick = purgeModal;
     }

@@ -88,7 +88,7 @@
     const reactors = [];
     for (const [userId, emoji] of Object.entries(p.reactions || {})) { reactions[emoji] = (reactions[emoji] || 0) + 1; total++; if (viewer && userId === viewer.id) myReaction = emoji; reactors.push({ userId, emoji, name: (p.rn || {})[userId] || null }); }
     const comments = Object.values(p.comments || {}).sort((a, b) => String(a.at).localeCompare(String(b.at))).map((c) => ({ name: c.name, text: c.text, at: c.at }));
-    return { id: p.id, shareCode: p.shareCode, userName: p.userName, userId: p.userId, photo: photoCache.get(p.id) || '', caption: p.caption || '', late: !!p.late, flip: !!p.flip, createdAt: p.createdAt, mine: !!(viewer && viewer.id === p.userId), reactions, myReaction, reactionTotal: total, reactors, comments, commentCount: comments.length };
+    return { id: p.id, shareCode: p.shareCode, userName: p.userName, userId: p.userId, photo: photoCache.get(p.id) || '', caption: p.caption || '', late: !!p.late, flip: !!p.flip, defi: p.d || '', createdAt: p.createdAt, mine: !!(viewer && viewer.id === p.userId), reactions, myReaction, reactionTotal: total, reactors, comments, commentCount: comments.length };
   }
 
   function genPin() { return String(1000 + Math.floor(Math.random() * 9000)); }
@@ -277,7 +277,7 @@
     if (method === 'POST' && route === '/api/moment') {
       const u = await userFromToken(body.token); const k = await klassOf(u.classCode);
       if (k.owner !== u.id) fail(403, 'owner_only');
-      const moment = { at: Date.now(), by: u.name }; await put(`classes/${u.classCode}/moment`, moment); return { moment };
+      const moment = { at: Date.now(), by: u.name }; const d = String(body.defi || '').trim().slice(0, 80); if (d) moment.d = d; await put(`classes/${u.classCode}/moment`, moment); return { moment };
     }
     if (method === 'POST' && route === '/api/profile') {
       const u = await userFromToken(body.token); const p = body.profile || {};
@@ -303,6 +303,7 @@
       const k = await klassOf(u.classCode);
       if (k.owner !== u.id) { const c = await get(`ctl/${u.classCode}`).catch(() => null); if (c && c.postsOff) fail(423, 'posts_off'); }
       const p = { id: uid(8), shareCode: shortCode(), userId: u.id, userName: u.name, classCode: u.classCode, caption: String(body.caption || '').slice(0, 140), late: !!(k.moment && Date.now() - k.moment.at > LATE_MS), createdAt: nowIso() };
+      if (k.moment && k.moment.d && Date.now() >= k.moment.at && dayKey(new Date(k.moment.at)) === dayKey()) p.d = String(k.moment.d).slice(0, 80);
       const flip = String(body.photoFlip || ''); if (/^data:image\/(jpeg|png|webp);base64,/.test(flip) && flip.length <= 1400000) p.flip = true;
       await put(`photos/${p.id}`, photo); if (p.flip) await put(`photos/${p.id}f`, flip);
       await put(`posts/${u.classCode}/${p.id}`, p); await put(`shares/${p.shareCode}`, { classCode: u.classCode, postId: p.id }); photoCache.set(p.id, photo);

@@ -971,6 +971,9 @@
       "by": {
        ".validate": "newData.isString() && newData.val().length <= 24"
       },
+      "d": {
+       ".validate": "newData.isString() && newData.val().length <= 80"
+      },
       "$other": {
        ".validate": false
       }
@@ -1077,6 +1080,9 @@
       },
       "flip": {
        ".validate": "newData.isBoolean()"
+      },
+      "d": {
+       ".validate": "newData.isString() && newData.val().length <= 80"
       },
       "rn": {
        "$userId": {

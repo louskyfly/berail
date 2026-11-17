@@ -601,3 +601,11 @@ body.in-chat .to-top{display:none !important}
 .chat-head .chat-bell.on{background:var(--primary);color:var(--primary-fg)}
 .sheet .consent-scroll{overflow-y:auto;-webkit-overflow-scrolling:touch;overscroll-behavior:contain;padding-right:4px}
 .sheet .charter-fine{margin-bottom:4px}
+
+/* Défis photo (2026-11-17) */
+.defi-box{margin-top:14px;padding:12px;border-radius:14px;background:rgba(127,127,127,.08);display:flex;flex-direction:column;gap:8px}
+.defi-box>span{font-size:.85em;opacity:.75}
+.defi-chips{display:flex;flex-wrap:wrap;gap:6px}
+.defi-chips .mini-btn.on{outline:2px solid currentColor;font-weight:700}
+.defi-line{display:block;font-weight:700;margin-top:2px}
+.defi-chip{display:inline-block;margin-top:4px;padding:2px 8px;border-radius:999px;background:rgba(0,0,0,.45);color:#fff;font-size:.75em;font-weight:600;max-width:100%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
